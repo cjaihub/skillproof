@@ -3,7 +3,7 @@ Flask-SQLAlchemy==3.1.1
 PyMySQL==1.2.4
 # If MySQL 8 reports "cryptography package is required", also: pip install cryptography
 python-dotenv==1.2.4
-gunicorn==23.0.0
+gunicorn==27.0.1
 anthropic>=2.14
 pydantic>=2.7          # structured AI outputs (imported directly)
 pypdf>=5
