@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SkillProof{% endblock %} · SkillProof</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">✓</span> SkillProof</a>
+    <button class="nav-toggle" aria-label="Menu" data-toggle="nav">☰</button>
+    <nav id="nav">
+      {% if current_user %}
+        {% if current_user.role == 'candidate' %}
+          <a href="{{ url_for('dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('profile') }}">Profile</a>
+          <a href="{{ url_for('evidence_list') }}">Evidence</a>
+          <a href="{{ url_for('report') }}">My report</a>
+        {% elif current_user.role == 'assessor' %}
+          <a href="{{ url_for('review_queue') }}">Review queue</a>
+        {% elif current_user.role == 'employer' %}
+          <a href="{{ url_for('talent') }}">Find talent</a>
+        {% elif current_user.role == 'admin' %}
+          <a href="{{ url_for('admin') }}">Overview</a>
+          <a href="{{ url_for('review_queue') }}">Reviews</a>
+          <a href="{{ url_for('admin_appeals') }}">Appeals</a>
+          <a href="{{ url_for('talent') }}">Talent</a>
+          <a href="{{ url_for('admin_audit') }}">Audit log</a>
+        {% endif %}
+        <a href="{{ url_for('account') }}" class="muted-link">{{ current_user.full_name|truncate(24) }} · {{ current_user.role }}</a>
+        <form method="post" action="{{ url_for('logout') }}" class="inline">
+          <input type="hidden" name="csrf" value="{{ csrf_token }}">
+          <button class="btn btn-ghost btn-sm">Log out</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('privacy') }}">Privacy</a>
+        <a href="{{ url_for('login') }}">Log in</a>
+        <a class="btn btn-sm" href="{{ url_for('register') }}">Create account</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}<div class="flashes">
+      {% for cat, m in msgs %}<div class="flash flash-{{ cat }}" role="status">{{ m }}<button class="flash-x" aria-label="Dismiss">×</button></div>{% endfor %}
+    </div>{% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    SkillProof prototype · Skills recognition for refugees and displaced people ·
+    <a href="{{ url_for('privacy') }}">Privacy &amp; data protection</a>
+  </div>
+</footer>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

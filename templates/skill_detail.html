@@ -1,0 +1,82 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf, badge, level_dots with context %}
+{% block title %}{{ s.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow"><a href="{{ url_for('dashboard') }}">← Dashboard</a></p>
+    <h1>{{ s.name }} {{ badge(s.status) }}</h1>
+    <p class="muted">{{ s.category }} · {{ s.years }} years · claimed level {{ level_dots(s.claimed_level) }}</p>
+  </div>
+  <div class="actions">
+    {% if s.status in ('self_declared', 'not_verified') %}<a class="btn btn-ghost" href="{{ url_for('skill_edit', sid=s.id) }}">Edit</a>{% endif %}
+    <form method="post" action="{{ url_for('skill_delete', sid=s.id) }}" data-confirm="Delete this skill and its assessment history?">{{ csrf() }}<button class="btn btn-ghost btn-danger">Delete</button></form>
+  </div>
+</div>
+{% if s.description %}<p class="card">{{ s.description }}</p>{% endif %}
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Evidence for this skill</h2>
+    {% for e in s.evidence %}
+      <div class="ev"><span class="tag">{{ EVIDENCE_KINDS[e.kind] }}</span> <b>{{ e.title }}</b>
+        {% if e.stored_name %}<a href="{{ url_for('evidence_file', eid=e.id) }}">{{ e.original_name }}</a>{% endif %}
+        {% if e.link %}<a href="{{ e.link }}" target="_blank" rel="noopener noreferrer">link ↗</a>{% endif %}</div>
+    {% else %}
+      <p class="muted">No evidence linked yet. Evidence is optional, but it helps assessors. If you lost your certificates, upload work samples, photos or references instead.</p>
+    {% endfor %}
+    <a class="btn btn-sm btn-ghost" href="{{ url_for('evidence_list', skill=s.id) }}">+ Add evidence</a>
+  </section>
+
+  <section class="card">
+    {% if s.status in ('self_declared', 'not_verified') %}
+      <h2>Practical assessment</h2>
+      <div class="task"><b>Your task</b><p>{{ task }}</p></div>
+      <form method="post" action="{{ url_for('skill_request', sid=s.id) }}" class="form">
+        {{ csrf() }}
+        <label>Your response<textarea name="task_response" rows="8" minlength="50" required data-count="5000" maxlength="5000">{{ s.task_response }}</textarea></label>
+        <p class="muted small">You'll be scored 0–5 on each criterion below. You pass with {{ PASS_MARK }}/20 or more and no criterion below 2.</p>
+        <button class="btn">Submit for assessment</button>
+      </form>
+    {% elif s.status == 'pending' %}
+      <h2>Awaiting assessment</h2>
+      <p>Submitted {{ s.requested_at.strftime('%d %b %Y') }}. An assessor will review your evidence and practical task.</p>
+      <div class="task"><b>Your response</b><p class="pre">{{ s.task_response }}</p></div>
+    {% else %}
+      <h2>Practical task response</h2>
+      <p class="pre">{{ s.task_response }}</p>
+    {% endif %}
+    <details class="criteria"><summary>Assessment criteria</summary>
+      <ul>{% for k, v in CRITERIA.items() %}<li>{{ v }}</li>{% endfor %}</ul></details>
+  </section>
+</div>
+
+{% if s.assessments %}
+<section class="card">
+  <h2>Assessment history</h2>
+  {% for a in s.assessments %}
+    <div class="assessment">
+      <div class="assessment-head">
+        <span class="badge badge-{{ a.outcome }}">{{ 'Verified' if a.outcome == 'verified' else 'Not yet verified' }}</span>
+        <b>{{ a.total }}/20</b>{% if a.assessed_level %} · assessed level {{ level_dots(a.assessed_level) }}{% endif %}
+        <span class="muted">· {{ a.assessor.full_name }}{% if a.assessor.organisation %}, {{ a.assessor.organisation }}{% endif %} · {{ a.created_at.strftime('%d %b %Y') }} · Ref {{ a.reference }}</span>
+      </div>
+      <div class="scores">
+        {% for k in CRITERIA %}<div><span>{{ k|capitalize }}</span><meter min="0" max="5" value="{{ a['score_' ~ k] }}"></meter><b>{{ a['score_' ~ k] }}</b></div>{% endfor %}
+      </div>
+      <p><b>Assessor feedback:</b> {{ a.comments }}</p>
+      {% for ap in a.appeals %}
+        <p class="appeal-note">Appeal {{ ap.status }}{% if ap.resolution %}: {{ ap.resolution }}{% endif %}</p>
+      {% endfor %}
+      {% if loop.first and not a.appeals|selectattr('status', 'equalto', 'open')|list and s.status != 'pending' %}
+        <details><summary>Disagree with this decision? Appeal or request a correction</summary>
+          <form method="post" action="{{ url_for('appeal', aid=a.id) }}" class="form">
+            {{ csrf() }}
+            <label>Explain what was wrong or missed<textarea name="reason" rows="4" minlength="20" required></textarea></label>
+            <button class="btn btn-ghost">Submit appeal</button>
+          </form></details>
+      {% endif %}
+    </div>
+  {% endfor %}
+</section>
+{% endif %}
+{% endblock %}

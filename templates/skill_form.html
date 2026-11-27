@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf with context %}
+{% block title %}{{ 'Edit skill' if s and s.id else 'Add a skill' }}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{{ 'Edit skill' if s and s.id else 'Add a skill' }}</h1>
+  <p class="muted">Skills you add are shown as <b>self-declared</b> until an assessor independently verifies them.</p>
+  <form method="post" class="form">
+    {{ csrf() }}
+    <label>Skill<input name="name" required maxlength="120" value="{{ s.name if s else '' }}" placeholder="e.g. Python web development, Electrical installation, Midwifery"></label>
+    <div class="row">
+      <label>Category
+        <select name="category">
+          {% for c in CATEGORIES %}<option {{ 'selected' if s and s.category == c }}>{{ c }}</option>{% endfor %}
+        </select></label>
+      <label>Years of experience<input type="number" name="years" min="0" max="60" value="{{ s.years if s else 0 }}"></label>
+    </div>
+    <label>How good are you at it?
+      <div class="level-pick">
+        {% for n, name in LEVELS.items() %}
+          <label><input type="radio" name="claimed_level" value="{{ n }}" {{ 'checked' if (s.claimed_level if s else 3) == n }}><span>{{ n }} · {{ name }}</span></label>
+        {% endfor %}
+      </div>
+    </label>
+    <label>Where and how have you used this skill?<textarea name="description" rows="5" data-count="1000" maxlength="1000">{{ s.description if s else '' }}</textarea></label>
+    <div class="actions">
+      <button class="btn">Save skill</button>
+      <a class="btn btn-ghost" href="{{ url_for('skill_detail', sid=s.id) if s and s.id else url_for('dashboard') }}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

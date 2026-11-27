@@ -1,0 +1,75 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf, level_dots with context %}
+{% block title %}Competency report · {{ u.full_name }}{% endblock %}
+{% block content %}
+{% if not public %}
+<section class="card share-box no-print">
+  <h2>Share your report</h2>
+  {% if u.consent_share %}
+    <p><span class="badge badge-verified">Sharing on</span> since {{ u.consent_at.strftime('%d %b %Y') }}. Employers on SkillProof can find you, and anyone with this link can view this report:</p>
+    <div class="copy-row"><input readonly id="share-url" value="{{ url_for('public_profile', token=u.share_token, _external=True) }}"><button class="btn btn-sm" data-copy="#share-url">Copy link</button></div>
+    <div class="actions">
+      <form method="post" action="{{ url_for('consent') }}">{{ csrf() }}<input type="hidden" name="share" value="0"><button class="btn btn-ghost btn-sm">Stop sharing</button></form>
+      <form method="post" action="{{ url_for('consent') }}" data-confirm="Create a new link? The old link will stop working.">{{ csrf() }}<input type="hidden" name="share" value="1"><input type="hidden" name="rotate" value="1"><button class="btn btn-ghost btn-sm">New link</button></form>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('my_access_log') }}">Who viewed my profile?</a>
+      <button class="btn btn-ghost btn-sm" data-print>Print / save as PDF</button>
+    </div>
+  {% else %}
+    <p><span class="badge badge-self_declared">Private</span> Only you can see this report.</p>
+    <form method="post" action="{{ url_for('consent') }}" class="form">
+      {{ csrf() }}<input type="hidden" name="share" value="1">
+      <label class="check"><input type="checkbox" required> I consent to SkillProof showing my name, headline, location, summary, work experience, skills and assessment results to registered employers and to anyone I give my link to. My evidence files and email will not be shown. I can withdraw this consent at any time.</label>
+      <div class="actions"><button class="btn">Turn on sharing</button><button type="button" class="btn btn-ghost" data-print>Print / save as PDF</button></div>
+    </form>
+  {% endif %}
+</section>
+{% endif %}
+
+{% set verified = u.skills|selectattr('status', 'equalto', 'verified')|list %}
+{% set declared = u.skills|rejectattr('status', 'equalto', 'verified')|list %}
+<article class="report card">
+  <header class="report-head">
+    <div>
+      <p class="eyebrow">SkillProof digital competency report</p>
+      <h1>{{ u.full_name }}</h1>
+      <p class="lead">{{ u.headline }}</p>
+      <p class="muted">{{ u.location }}</p>
+    </div>
+    <div class="report-seal"><b>{{ verified|length }}</b><span>independently<br>assessed skill{{ '' if verified|length == 1 else 's' }}</span></div>
+  </header>
+  {% if u.bio %}<p>{{ u.bio }}</p>{% endif %}
+
+  <h2>Independently assessed competencies</h2>
+  {% if verified %}
+  <table class="table">
+    <thead><tr><th>Skill</th><th>Assessed level</th><th>Score</th><th>Assessed by</th><th>Reference</th></tr></thead>
+    <tbody>{% for s in verified %}{% set a = s.latest_assessment %}
+      <tr><td><b>{{ s.name }}</b><br><small class="muted">{{ s.category }}</small></td>
+        <td>{{ level_dots(a.assessed_level) }}</td><td>{{ a.total }}/20</td>
+        <td>{{ a.assessor.full_name }}{% if a.assessor.organisation %}<br><small class="muted">{{ a.assessor.organisation }}</small>{% endif %}</td>
+        <td><code>{{ a.reference }}</code><br><small class="muted">{{ a.created_at.strftime('%d %b %Y') }}</small></td></tr>
+    {% endfor %}</tbody>
+  </table>
+  {% else %}<p class="muted">No skills have been independently assessed yet.</p>{% endif %}
+
+  <h2>Self-declared skills <small class="muted">(not independently verified)</small></h2>
+  {% if declared %}
+  <ul class="pill-list">{% for s in declared %}<li>{{ s.name }} · <small>{{ s.years }} yr · {{ LEVELS[s.claimed_level] }}{% if s.status == 'pending' %} · assessment in progress{% endif %}</small></li>{% endfor %}</ul>
+  {% else %}<p class="muted">None.</p>{% endif %}
+
+  {% if u.experiences %}
+  <h2>Work experience <small class="muted">(self-declared)</small></h2>
+  {% for e in u.experiences %}
+    <div class="exp-r"><b>{{ e.title }}</b>{% if e.organisation %} · {{ e.organisation }}{% endif %}
+      <small class="muted">{{ e.country }}{% if e.start_year %} · {{ e.start_year }}–{{ e.end_year or 'present' }}{% endif %}</small>
+      {% if e.description %}<p>{{ e.description }}</p>{% endif %}</div>
+  {% endfor %}
+  {% endif %}
+
+  <footer class="report-foot">
+    <p><b>How to read this report.</b> Assessed skills were scored 0–5 by a SkillProof assessor on four published criteria
+      (technical knowledge, practical ability, evidence quality, communication), using evidence and a practical task.
+      A skill is verified at {{ PASS_MARK }}/20 or more with no criterion below 2. Self-declared items are the candidate's own statements.</p>
+    <p class="muted small">Generated {{ now.strftime('%d %b %Y') if now else '' }} · SkillProof prototype</p>
+  </footer>
+</article>
+{% endblock %}

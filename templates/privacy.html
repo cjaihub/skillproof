@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Privacy & data protection{% endblock %}
+{% block content %}
+<article class="card prose">
+  <h1>Privacy &amp; data protection</h1>
+  <p class="muted">Prototype notice, designed with Kenya's Data Protection Act, 2019 in mind. Have it reviewed by a qualified data protection adviser before a live launch.</p>
+
+  <h2>What we collect and why</h2>
+  <ul>
+    <li><b>Account details</b> (name, email, password stored only as a secure hash), so you can log in.</li>
+    <li><b>Your skills profile and work history</b>, to describe your competencies.</li>
+    <li><b>Evidence you upload</b> (certificates, work samples, links), so assessors can evaluate your skills.</li>
+    <li><b>Assessment results</b>, to produce your competency report.</li>
+  </ul>
+  <p>We only collect what is needed for skills recognition (data minimisation). Please do <b>not</b> upload refugee ID numbers, passport scans or health information. They are not needed.</p>
+
+  <h2>Who can see your information</h2>
+  <table class="table">
+    <tr><th></th><th>Profile &amp; skills</th><th>Evidence files</th><th>Assessment results</th></tr>
+    <tr><td>You</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+    <tr><td>Assessors</td><td>Only when you request an assessment</td><td>Yes, to assess</td><td>Yes</td></tr>
+    <tr><td>Employers</td><td><b>Only if you turn on sharing</b></td><td>Never</td><td>Only if you turn on sharing</td></tr>
+    <tr><td>Anyone with your link</td><td><b>Only if you turn on sharing</b></td><td>Never</td><td>Only if you turn on sharing</td></tr>
+  </table>
+
+  <h2>Your rights</h2>
+  <ul>
+    <li><b>Consent:</b> sharing is off by default. You can turn it on or off at any time, and create a new link to cancel the old one.</li>
+    <li><b>Access:</b> see who viewed your profile and evidence in your access log, and download all your data as a file.</li>
+    <li><b>Correction:</b> edit your profile at any time, and appeal any assessment decision you believe is wrong.</li>
+    <li><b>Deletion:</b> delete your account and all your data, including uploaded files, from your account page.</li>
+  </ul>
+
+  <h2>How we protect it</h2>
+  <ul>
+    <li>Passwords are salted and hashed, never stored in plain text.</li>
+    <li>Evidence files are stored outside the public website with random names, and are only served to you, assessors and administrators after a permission check.</li>
+    <li>Role-based access control separates candidates, assessors, employers and administrators.</li>
+    <li>An audit log records assessments, role changes, consent changes and every time someone views your data.</li>
+  </ul>
+</article>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Find talent{% endblock %}
+{% block content %}
+<h1>Find verified talent</h1>
+<p class="muted">You only see candidates who have consented to share their profile. Evidence files stay private, and you see assessment results only.</p>
+<form class="card filters" method="get">
+  <input name="q" value="{{ q }}" placeholder="Skill or role, e.g. Python, nursing, electrician">
+  <select name="category"><option value="">All categories</option>{% for c in CATEGORIES %}<option {{ 'selected' if c == cat }}>{{ c }}</option>{% endfor %}</select>
+  <label class="check"><input type="checkbox" name="verified" value="1" {{ 'checked' if verified_only }} data-autosubmit> Assessed skills only</label>
+  <input type="hidden" name="searched" value="1">
+  <button class="btn">Search</button>
+</form>
+
+<p class="muted">{{ people|length }} candidate{{ '' if people|length == 1 else 's' }} found</p>
+<div class="grid-3">
+  {% for p in people %}
+    <a class="card person" href="{{ url_for('talent_profile', uid=p.id) }}">
+      <b>{{ p.full_name }}</b>
+      <span class="muted">{{ p.headline }}</span>
+      <small class="muted">{{ p.location }}</small>
+      <ul class="pill-list">
+        {% for s in p.skills if s.status == 'verified' %}<li class="pill-verified">✓ {{ s.name }}</li>{% endfor %}
+        {% for s in p.skills if s.status != 'verified' %}<li>{{ s.name }}</li>{% endfor %}
+      </ul>
+    </a>
+  {% else %}
+    <div class="empty">No matching candidates yet. Try a broader search or untick "assessed skills only".</div>
+  {% endfor %}
+</div>
+{% endblock %}

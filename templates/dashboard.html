@@ -1,0 +1,58 @@
+{% extends "base.html" %}{% from "_macros.html" import badge, level_dots with context %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Hello, {{ u.full_name.split(' ')[0] }}</h1>
+    <p class="muted">{{ u.headline or 'Add a headline to your profile so employers know what you do.' }}</p>
+  </div>
+  <a class="btn" href="{{ url_for('skill_new') }}">+ Add a skill</a>
+</div>
+
+{% set done = steps | selectattr(1) | list | length %}
+<section class="card">
+  <div class="progress-head"><h2>Your progress</h2><span class="muted">{{ done }} of {{ steps|length }} steps</span></div>
+  <div class="progress"><div style="width: {{ (done / steps|length * 100)|round }}%"></div></div>
+  <ol class="checklist">
+    {% for label, ok, link in steps %}
+      <li class="{{ 'ok' if ok }}">{% if link and not ok %}<a href="{{ link }}">{{ label }}</a>{% else %}{{ label }}{% endif %}</li>
+    {% endfor %}
+  </ol>
+</section>
+
+<section class="card">
+  <h2>My skills</h2>
+  {% if u.skills %}
+  <table class="table">
+    <thead><tr><th>Skill</th><th>Claimed level</th><th>Evidence</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for s in u.skills|sort(attribute='created_at', reverse=true) %}
+      <tr>
+        <td><b>{{ s.name }}</b><br><small class="muted">{{ s.category }} · {{ s.years }} yr</small></td>
+        <td>{{ level_dots(s.claimed_level) }}</td>
+        <td>{{ s.evidence|length }}</td>
+        <td>{{ badge(s.status) }}</td>
+        <td class="right"><a class="btn btn-sm btn-ghost" href="{{ url_for('skill_detail', sid=s.id) }}">
+          {{ 'Request assessment' if s.status in ('self_declared','not_verified') else 'View' }}</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty">You haven't added any skills yet. <a href="{{ url_for('skill_new') }}">Add your first skill</a>. Formal and informal work both count.</div>
+  {% endif %}
+</section>
+
+{% if appeals %}
+<section class="card">
+  <h2>My appeals</h2>
+  <ul class="list">
+    {% for ap in appeals %}
+      <li><b>{{ ap.assessment.skill.name }}</b> · {{ ap.created_at.strftime('%d %b %Y') }}
+        <span class="badge badge-{{ 'pending' if ap.status == 'open' else ('verified' if ap.status == 'upheld' else 'not_verified') }}">{{ ap.status|capitalize }}</span>
+        {% if ap.resolution %}<p class="muted">{{ ap.resolution }}</p>{% endif %}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

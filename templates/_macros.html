@@ -1,0 +1,9 @@
+{% macro csrf() %}<input type="hidden" name="csrf" value="{{ csrf_token }}">{% endmacro %}
+
+{% macro badge(status) -%}
+<span class="badge badge-{{ status }}">{% if status == 'verified' %}✓ {% endif %}{{ SKILL_STATUSES[status] }}</span>
+{%- endmacro %}
+
+{% macro level_dots(n, label=true) -%}
+<span class="dots" title="{{ LEVELS[n] }}">{% for i in range(1, 6) %}<i class="{{ 'on' if i <= n }}"></i>{% endfor %}</span>{% if label %} <small>{{ LEVELS[n] }}</small>{% endif %}
+{%- endmacro %}

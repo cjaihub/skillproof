@@ -1,0 +1,45 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf with context %}
+{% block title %}My profile{% endblock %}
+{% block content %}
+<h1>My profile</h1>
+<div class="grid-2">
+  <section class="card">
+    <h2>About me</h2>
+    <form method="post" class="form">
+      {{ csrf() }}
+      <label>Full name<input name="full_name" value="{{ u.full_name }}" required></label>
+      <label>Professional headline<input name="headline" maxlength="160" value="{{ u.headline }}" placeholder="e.g. Backend developer with 6 years' experience"></label>
+      <label>Current location<input name="location" value="{{ u.location }}" placeholder="e.g. Kakuma, Kenya"></label>
+      <label>Summary<textarea name="bio" rows="6" data-count="1200" maxlength="1200" placeholder="Describe your background, the work you've done and the kind of role you're looking for.">{{ u.bio }}</textarea></label>
+      <button class="btn">Save profile</button>
+    </form>
+  </section>
+
+  <section class="card" id="experience">
+    <h2>Work experience</h2>
+    {% for e in u.experiences %}
+      <div class="exp">
+        <div><b>{{ e.title }}</b>{% if e.organisation %} · {{ e.organisation }}{% endif %}
+          <br><small class="muted">{{ e.country }}{% if e.start_year %} · {{ e.start_year }}–{{ e.end_year or 'present' }}{% endif %}</small>
+          {% if e.description %}<p>{{ e.description }}</p>{% endif %}</div>
+        <form method="post" action="{{ url_for('experience_delete', eid=e.id) }}" data-confirm="Remove this experience?">
+          {{ csrf() }}<button class="btn btn-sm btn-ghost">Remove</button></form>
+      </div>
+    {% else %}
+      <p class="muted">No experience added yet. Include work done before displacement, volunteering and informal work.</p>
+    {% endfor %}
+    <details class="add" {% if not u.experiences %}open{% endif %}>
+      <summary>+ Add experience</summary>
+      <form method="post" action="{{ url_for('experience_add') }}" class="form">
+        {{ csrf() }}
+        <label>Job title / role<input name="title" required></label>
+        <div class="row"><label>Organisation<input name="organisation"></label><label>Country<input name="country"></label></div>
+        <div class="row"><label>From (year)<input type="number" name="start_year" min="1950" max="2100"></label>
+          <label>To (year) <small class="muted">blank = current</small><input type="number" name="end_year" min="1950" max="2100"></label></div>
+        <label>What you did<textarea name="description" rows="3"></textarea></label>
+        <button class="btn">Add experience</button>
+      </form>
+    </details>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf with context %}
+{% block title %}My evidence{% endblock %}
+{% block content %}
+<h1>My evidence</h1>
+<p class="muted">Files are stored privately. Only you, assessors and administrators can open them. Employers never see your files, only assessment results.
+  Please don't upload ID documents, passports or refugee registration numbers.</p>
+<div class="grid-2">
+  <section class="card">
+    <h2>Add evidence</h2>
+    <form method="post" enctype="multipart/form-data" class="form" data-validate>
+      {{ csrf() }}
+      <label>Title<input name="title" required maxlength="160" placeholder="e.g. Diploma in Nursing (photo), GitHub project"></label>
+      <div class="row">
+        <label>Type<select name="kind">{% for k, v in EVIDENCE_KINDS.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+        <label>Supports skill<select name="skill_id"><option value="">(general)</option>
+          {% for s in u.skills %}<option value="{{ s.id }}" {{ 'selected' if preselect == s.id }}>{{ s.name }}</option>{% endfor %}</select></label>
+      </div>
+      <label>File <small class="muted">PDF, image, Word, text or zip · max 10 MB</small>
+        <input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.txt,.zip" data-maxmb="10"></label>
+      <label>…or a link<input type="url" name="link" placeholder="https://"></label>
+      <label>Notes for the assessor<textarea name="description" rows="3" placeholder="What does this show? Who can confirm it?"></textarea></label>
+      {% if preselect %}<input type="hidden" name="back" value="{{ url_for('skill_detail', sid=preselect) }}">{% endif %}
+      <button class="btn">Save evidence</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2>Saved evidence ({{ u.evidence|length }})</h2>
+    {% for e in u.evidence|sort(attribute='uploaded_at', reverse=true) %}
+      <div class="exp">
+        <div><span class="tag">{{ EVIDENCE_KINDS[e.kind] }}</span> <b>{{ e.title }}</b>
+          <br><small class="muted">{{ e.skill.name if e.skill else 'General' }} · {{ e.uploaded_at.strftime('%d %b %Y') }}</small>
+          <br>{% if e.stored_name %}<a href="{{ url_for('evidence_file', eid=e.id) }}">⬇ {{ e.original_name }}</a>{% endif %}
+          {% if e.link %}<a href="{{ e.link }}" target="_blank" rel="noopener noreferrer">{{ e.link|truncate(40) }} ↗</a>{% endif %}
+          {% if e.description %}<p class="small">{{ e.description }}</p>{% endif %}</div>
+        <form method="post" action="{{ url_for('evidence_delete', eid=e.id) }}" data-confirm="Permanently delete this evidence?">{{ csrf() }}<button class="btn btn-sm btn-ghost">Delete</button></form>
+      </div>
+    {% else %}<p class="muted">Nothing uploaded yet.</p>{% endfor %}
+  </section>
+</div>
+{% endblock %}

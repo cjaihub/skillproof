@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Show what you can do{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">Digital skills recognition &amp; validation</p>
+    <h1>Lost your certificates? Your skills are still real.</h1>
+    <p class="lead">SkillProof helps refugees and displaced professionals record their experience, submit evidence,
+      get their competencies independently assessed, and share a trusted report with employers.</p>
+    <div class="actions">
+      {% if current_user %}
+        <a class="btn" href="{{ url_for('dashboard') }}">Go to my dashboard</a>
+      {% else %}
+        <a class="btn" href="{{ url_for('register') }}">Create a free account</a>
+        <a class="btn btn-ghost" href="{{ url_for('register', role='employer') }}">I'm an employer</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="hero-card card">
+    <div class="report-mini">
+      <strong>Amina H.</strong><span class="muted">Full-stack developer · Nairobi</span>
+      <ul>
+        <li><span>Python / Flask</span><span class="badge badge-verified">✓ Independently assessed</span></li>
+        <li><span>SQL databases</span><span class="badge badge-verified">✓ Independently assessed</span></li>
+        <li><span>React</span><span class="badge badge-self_declared">Self-declared</span></li>
+      </ul>
+      <small class="muted">Ref SP-2026-00042 · Assessed against 4 published criteria</small>
+    </div>
+  </div>
+</section>
+
+<section class="stats">
+  <div><b>{{ stats.candidates }}</b><span>people building profiles</span></div>
+  <div><b>{{ stats.verified }}</b><span>skills independently assessed</span></div>
+  <div><b>{{ stats.employers }}</b><span>employers looking for talent</span></div>
+</section>
+
+<h2 class="center">How it works</h2>
+<ol class="steps">
+  <li><b>Register</b><span>Create your account. Your data stays private until you choose to share.</span></li>
+  <li><b>Build your skills profile</b><span>List your skills, level and work experience, including informal work.</span></li>
+  <li><b>Submit evidence</b><span>Upload whatever you still have: certificates, photos of work, code, references.</span></li>
+  <li><b>Get assessed</b><span>Complete a short practical task. A trained assessor scores it against clear criteria.</span></li>
+  <li><b>Share your report</b><span>Get a digital competency report with a link you control, and you can switch it off any time.</span></li>
+</ol>
+
+<section class="grid-3">
+  <div class="card"><h3>Honest by design</h3><p>Self-declared skills and independently assessed ones are always shown separately, so employers know exactly what has been checked.</p></div>
+  <div class="card"><h3>Fair and accountable</h3><p>Every decision records who assessed it, the scores and the reasons. You can appeal, and a different assessor will reassess.</p></div>
+  <div class="card"><h3>Your data, your choice</h3><p>Built with Kenya's Data Protection Act, 2019 in mind: consent before sharing, access logs, data export and deletion.</p></div>
+</section>
+{% endblock %}

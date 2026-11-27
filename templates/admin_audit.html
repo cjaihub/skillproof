@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Who accessed my data' if mine else 'Audit log' }}{% endblock %}
+{% block content %}
+<h1>{{ 'Who accessed my data' if mine else 'Audit log' }}</h1>
+<p class="muted">{{ 'Every time an assessor, employer or link visitor viewed your profile or evidence, and every decision about you.' if mine else 'Accountability record of assessments, role changes, consent changes and data access.' }}</p>
+<section class="card">
+  <table class="table">
+    <thead><tr><th>When (UTC)</th><th>Who</th><th>Action</th>{% if not mine %}<th>Subject user</th>{% endif %}<th>Detail</th></tr></thead>
+    <tbody>{% for e in entries %}
+      <tr><td>{{ e.created_at.strftime('%d %b %Y %H:%M') }}</td>
+        <td>{{ e.actor.full_name if e.actor else 'Anonymous / link visitor' }}{% if e.actor %}<br><small class="muted">{{ e.actor.role }}{% if e.actor.organisation %} · {{ e.actor.organisation }}{% endif %}</small>{% endif %}</td>
+        <td><span class="tag">{{ e.action.replace('_', ' ') }}</span></td>
+        {% if not mine %}<td>{{ e.subject_user_id or '' }}</td>{% endif %}
+        <td class="small">{{ e.detail }}</td></tr>
+    {% else %}<tr><td colspan="5" class="muted">Nothing recorded yet.</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+{% endblock %}
