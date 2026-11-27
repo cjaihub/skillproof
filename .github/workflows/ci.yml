@@ -47,4 +47,6 @@ jobs:
       - name: Link crawler
         run: python test_links.py
       - name: Translation coverage report
-        run: python i18n.py > coverage.txt && grep -E "^ *[a-z]{2,3}: [0-9]+/[0-9]+" coverage.txt || true
+        run: |
+          python i18n.py > coverage.txt
+          grep -E "translated" coverage.txt || true
