@@ -451,7 +451,7 @@ tc = client()
 html = tc.get("/?lang=sw").get_data(as_text=True)
 tok = re.search(r'data-csrf="([^"]+)"', html).group(1)
 r = tc.post("/api/translate", json={"texts": ["Bookkeeper for 5 years"], "lang": "sw"}, headers={"X-CSRF-Token": tok})
-check(r.status_code == 503 and "not available" in r.get_json()["error"], "content translation reports unavailable without AI")
+check(r.status_code == 503 and "haipatikani" in r.get_json()["error"], "content translation reports unavailable without AI, in the page language")
 with app.app_context():
     db.session.add(ContentTranslation(source_hash=_key("Bookkeeper for 5 years"), lang="sw", text="Mhasibu kwa miaka 5"))
     db.session.commit()
