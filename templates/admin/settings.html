@@ -1,0 +1,39 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf with context %}
+{% block title %}{{ _("Platform settings") }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ _("Platform settings") }}</h1><p>{{ _("Control registration, approvals and platform-wide messages. Changes are recorded in the audit log.") }}</p></div></div>
+<form method="post" class="grid g-2">
+  {{ csrf() }}
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('users') }} {{ _("Registration & approvals") }}</h2></div>
+    <div class="panel-body" style="padding-top:4px;padding-bottom:4px">
+      {% for key, title, desc in [
+        ('registration_open', _('Open registration'), _('Allow new people to create accounts.')),
+        ('employer_approval', _('Approve employers manually'), _('New employers must be approved before they can search candidates. Recommended.')),
+        ('assessor_applications', _('Accept assessor applications'), _('Show "Become an assessor" at sign-up. Applicants always need approval.')),
+        ('candidate_approval', _('Approve candidates manually'), _('Hold new candidate accounts until an admin approves them.')),
+        ('require_email_verification', _('Require confirmed email'), _('Candidates must confirm their email before requesting assessments or sharing.')),
+      ] %}
+        <label class="switch"><span><b>{{ title }}</b><small>{{ desc }}</small></span><input type="checkbox" name="{{ key }}" value="1" {{ 'checked' if setting(key) == '1' }}></label>
+      {% endfor %}
+    </div>
+  </section>
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('clock') }} {{ _("Assessments") }}</h2></div>
+      <div class="panel-body form">
+        <label class="field">{{ _("Target turnaround (days)") }}<input type="number" name="assessment_sla_days" min="1" max="60" value="{{ setting('assessment_sla_days') }}" style="max-width:140px">
+          <small class="hint">{{ _("Requests older than this are flagged as overdue.") }}</small></label>
+        <p class="small muted" style="margin:0">{{ _("Pass mark") }}: {{ PASS_MARK }}/20 with no criterion below 2 (fixed in this version).</p>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('bell') }} {{ _("Announcement banner") }}</h2></div>
+      <div class="panel-body form">
+        <label class="field">{{ _("Shown to all logged-in users") }}<textarea name="announcement" rows="3" maxlength="300" placeholder="{{ _("e.g. Scheduled maintenance on Saturday 09:00–10:00 EAT") }}">{{ setting('announcement') }}</textarea></label>
+      </div>
+    </section>
+    <div><button class="btn btn-lg">{{ icon('check') }} {{ _("Save settings") }}</button></div>
+  </div>
+</form>
+{% endblock %}

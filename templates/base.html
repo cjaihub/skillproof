@@ -1,63 +1,50 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ LANG }}" dir="{{ LANG_DIR }}">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b6e4f" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b100e" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="{{ _('SkillProof helps refugees and displaced professionals prove their skills to employers.') }}">
   <title>{% block title %}SkillProof{% endblock %} · SkillProof</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230b6e4f'/><path d='M9 16.5l4.5 4.5L23 11.5' stroke='white' stroke-width='3.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <script>/* theme: light | dark | system (default). Applied before paint to avoid a flash. */
+    (function(){var r=document.documentElement,p='system';try{p=localStorage.getItem('sp-theme')||'system';}catch(e){}
+      var dark=p==='dark'||(p==='system'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
+      r.dataset.themePref=p;r.dataset.theme=dark?'dark':'light';})();
+  </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
-<header class="topbar">
-  <div class="wrap topbar-inner">
-    <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">✓</span> SkillProof</a>
-    <button class="nav-toggle" aria-label="Menu" data-toggle="nav">☰</button>
-    <nav id="nav">
-      {% if current_user %}
-        {% if current_user.role == 'candidate' %}
-          <a href="{{ url_for('dashboard') }}">Dashboard</a>
-          <a href="{{ url_for('profile') }}">Profile</a>
-          <a href="{{ url_for('evidence_list') }}">Evidence</a>
-          <a href="{{ url_for('report') }}">My report</a>
-        {% elif current_user.role == 'assessor' %}
-          <a href="{{ url_for('review_queue') }}">Review queue</a>
-        {% elif current_user.role == 'employer' %}
-          <a href="{{ url_for('talent') }}">Find talent</a>
-        {% elif current_user.role == 'admin' %}
-          <a href="{{ url_for('admin') }}">Overview</a>
-          <a href="{{ url_for('review_queue') }}">Reviews</a>
-          <a href="{{ url_for('admin_appeals') }}">Appeals</a>
-          <a href="{{ url_for('talent') }}">Talent</a>
-          <a href="{{ url_for('admin_audit') }}">Audit log</a>
-        {% endif %}
-        <a href="{{ url_for('account') }}" class="muted-link">{{ current_user.full_name|truncate(24) }} · {{ current_user.role }}</a>
-        <form method="post" action="{{ url_for('logout') }}" class="inline">
-          <input type="hidden" name="csrf" value="{{ csrf_token }}">
-          <button class="btn btn-ghost btn-sm">Log out</button>
-        </form>
-      {% else %}
-        <a href="{{ url_for('privacy') }}">Privacy</a>
-        <a href="{{ url_for('login') }}">Log in</a>
-        <a class="btn btn-sm" href="{{ url_for('register') }}">Create account</a>
-      {% endif %}
-    </nav>
-  </div>
-</header>
+<body class="{% block body_class %}{% endblock %}">
+{% include "_icons.html" %}
+{% from "_macros.html" import icon with context %}
+<a class="skip" href="#main">{{ _("Skip to content") }}</a>
 
-<main class="wrap">
+{% block shell %}{% endblock %}
+
+<div class="toasts" aria-live="polite">
   {% with msgs = get_flashed_messages(with_categories=true) %}
-    {% if msgs %}<div class="flashes">
-      {% for cat, m in msgs %}<div class="flash flash-{{ cat }}" role="status">{{ m }}<button class="flash-x" aria-label="Dismiss">×</button></div>{% endfor %}
-    </div>{% endif %}
+    {% for cat, m in msgs %}
+      <div class="toast toast-{{ cat }}" role="status">
+        <span class="toast-icon">{{ icon({'success':'check-circle','error':'alert','dev':'mail'}.get(cat, 'info')) }}</span>
+        <div>{{ m }}</div>
+        <button class="toast-x" aria-label="{{ _("Dismiss") }}">{{ icon('x') }}</button>
+      </div>
+    {% endfor %}
   {% endwith %}
-  {% block content %}{% endblock %}
-</main>
-
-<footer class="footer">
-  <div class="wrap">
-    SkillProof prototype · Skills recognition for refugees and displaced people ·
-    <a href="{{ url_for('privacy') }}">Privacy &amp; data protection</a>
-  </div>
-</footer>
+</div>
+<div class="tr-bar" id="tr-bar" hidden role="region" aria-label="{{ _('Translation') }}"
+     data-endpoint="{{ url_for('translate_content') }}" data-csrf="{{ csrf_token }}" data-lang="{{ LANG }}"
+     data-i18n='{{ {"to": _("Translate to {language}", language=LANGUAGES[LANG][0]), "orig": _("Show original"), "busy": _("Translating…"), "done": _("Translated by AI"), "note": _("Some text on this page was written by people using SkillProof.")}|tojson }}'>
+  {{ icon('globe') }}<span class="tr-note"></span>
+  <button type="button" class="btn btn-sm" data-tr-go></button>
+  <button type="button" class="icon-btn" data-tr-close aria-label="{{ _('Close') }}">{{ icon('x') }}</button>
+</div>
+{% if request.endpoint not in ('public_profile',) %}{% include "_assistant.html" %}{% endif %}
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/assistant.js') }}"></script>
+<script src="{{ url_for('static', filename='js/translate.js') }}"></script>
 </body>
 </html>

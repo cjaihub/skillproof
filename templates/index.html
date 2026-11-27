@@ -1,52 +1,155 @@
-{% extends "base.html" %}
-{% block title %}Show what you can do{% endblock %}
+{% extends "layouts/public.html" %}{% from "_macros.html" import icon with context %}
+{% block title %}{{ _('Prove what you can do') }}{% endblock %}
 {% block content %}
 <section class="hero">
-  <div>
-    <p class="eyebrow">Digital skills recognition &amp; validation</p>
-    <h1>Lost your certificates? Your skills are still real.</h1>
-    <p class="lead">SkillProof helps refugees and displaced professionals record their experience, submit evidence,
-      get their competencies independently assessed, and share a trusted report with employers.</p>
-    <div class="actions">
-      {% if current_user %}
-        <a class="btn" href="{{ url_for('dashboard') }}">Go to my dashboard</a>
-      {% else %}
-        <a class="btn" href="{{ url_for('register') }}">Create a free account</a>
-        <a class="btn btn-ghost" href="{{ url_for('register', role='employer') }}">I'm an employer</a>
-      {% endif %}
+  <div class="wrap hero-grid">
+    <div>
+      <span class="pill"><b>{{ _('New') }}</b> {{ _('Skills validation for displaced professionals') }}</span>
+      <h1>{{ _('Lost your certificates?') }}<br><em>{{ _('Your skills are still real.') }}</em></h1>
+      <p class="lead">{{ _('SkillProof helps refugees and displaced professionals record their experience, submit evidence, get independently assessed and share a trusted competency report with employers.') }}</p>
+      <div class="actions" style="margin-top:26px">
+        {% if current_user %}
+          <a class="btn btn-lg" href="{{ url_for('dashboard') }}">{{ _('Open my dashboard') }} {{ icon('arrow-right', 'flip-rtl') }}</a>
+        {% else %}
+          <a class="btn btn-lg" href="{{ url_for('register') }}">{{ _('Get started free') }} {{ icon('arrow-right', 'flip-rtl') }}</a>
+          <a class="btn btn-lg btn-ghost" href="{{ url_for('register', role='employer') }}">{{ icon('briefcase') }} {{ _("I'm hiring") }}</a>
+        {% endif %}
+      </div>
+      <div class="trust">
+        <span>{{ icon('shield') }} {{ _('Private by default') }}</span>
+        <span>{{ icon('scale') }} {{ _('Fair & appealable') }}</span>
+        <span>{{ icon('chat') }} {{ _('Help in your language') }}</span>
+      </div>
+    </div>
+    <div class="mock" aria-hidden="true">
+      <div class="mock-card">
+        <div class="mock-head">
+          <span class="avatar lg av-0">AH</span>
+          <div><b style="font-size:1.05rem">Amina H. <span class="vtick">{{ icon('shield') }}</span></b><div class="muted small">{{ _('Full-stack developer') }} · Nairobi</div></div>
+        </div>
+        <div class="mock-row"><span>Python / Flask</span><span class="badge badge-verified">{{ icon('check') }}{{ _('Assessed') }} · 17/20</span></div>
+        <div class="mock-row"><span>SQL</span><span class="badge badge-verified">{{ icon('check') }}{{ _('Assessed') }} · 15/20</span></div>
+        <div class="mock-row"><span>React</span><span class="badge badge-self_declared">{{ _('Self-declared') }}</span></div>
+        <div class="progress" style="margin-top:14px"><i style="width:82%"></i></div>
+        <div class="muted tiny" style="margin-top:8px" dir="ltr">Ref SP-2026-00042</div>
+      </div>
+      <div class="mock-float mf-1"><span class="kpi-icon">{{ icon('eye') }}</span><div><b>{{ _('3 employers') }}</b><div class="muted tiny">{{ _('viewed this week') }}</div></div></div>
+      <div class="mock-float mf-2"><span class="kpi-icon">{{ icon('award') }}</span><div><b>{{ _('Verified') }}</b><div class="muted tiny">{{ _('by an independent assessor') }}</div></div></div>
     </div>
   </div>
-  <div class="hero-card card">
-    <div class="report-mini">
-      <strong>Amina H.</strong><span class="muted">Full-stack developer · Nairobi</span>
-      <ul>
-        <li><span>Python / Flask</span><span class="badge badge-verified">✓ Independently assessed</span></li>
-        <li><span>SQL databases</span><span class="badge badge-verified">✓ Independently assessed</span></li>
-        <li><span>React</span><span class="badge badge-self_declared">Self-declared</span></li>
+</section>
+
+<section class="wrap">
+  <div class="stats-band">
+    <div class="stat"><b>{{ stats.candidates }}</b><span>{{ _('professionals building profiles') }}</span></div>
+    <div class="stat"><b>{{ stats.verified }}</b><span>{{ _('skills independently assessed') }}</span></div>
+    <div class="stat"><b>{{ stats.employers }}</b><span>{{ _('verified employers') }}</span></div>
+    <div class="stat"><b>4</b><span>{{ _('published assessment criteria') }}</span></div>
+  </div>
+</section>
+
+<section class="section" id="how">
+  <div class="wrap">
+    <div class="section-head"><span class="eyebrow">{{ _('How it works') }}</span><h2>{{ _('From lost paperwork to a trusted record in five steps') }}</h2>
+      <p class="muted">{{ _('Formal or informal, before or after displacement: all experience counts.') }}</p></div>
+    {% set tour = [
+      ('user', _('Register'), _('Create your free account'), _('Sign up in about two minutes as a candidate. Your information stays private until you decide to share it.'),
+        [_('Free for refugees and displaced people'), _('Confirm your email to secure your account'), _('Sharing is switched off by default')], _('2 minutes')),
+      ('layers', _('Build your profile'), _('Describe what you can do'), _('List your skills, how good you are at each, and your work history. Work before displacement, volunteering and informal work all count.'),
+        [_('Rate each skill from Beginner to Expert'), _('Add jobs, organisations and years'), _('Profile strength meter shows what to add next')], _('10 minutes')),
+      ('upload', _('Add evidence'), _('Upload whatever you still have'), _('Lost your certificates? Photos of your work, code links, references or letters help assessors understand your skills.'),
+        [_('PDF, photos, Word documents or links'), _('Stored privately: employers never see files'), _('No ID documents or refugee numbers needed')], _('5 minutes')),
+      ('clipboard', _('Get assessed'), _('Prove it with a practical task'), _('Answer a short task for your field. A vetted assessor scores it against four published criteria and explains the decision.'),
+        [_('Knowledge, practical ability, evidence, communication'), _('Pass with 12/20 and no criterion below 2'), _('Disagree? Appeal and a different assessor reviews')], _('Usually within 7 days')),
+      ('share', _('Share your report'), _('Share a report employers trust'), _('Get a digital competency report with assessment scores and references. Share it with one link that you can switch off at any time.'),
+        [_('Verified employers can find you'), _('See who viewed your profile'), _('Print or save it as a PDF')], _('Instant')),
+    ] %}
+    <div class="tour" data-tour>
+      <div class="tour-progress" aria-hidden="true"><i></i></div>
+      <div class="tour-tabs" role="tablist" aria-label="{{ _('Steps') }}">
+        {% for ic, short, title, text, points, time in tour %}
+          <button type="button" class="tour-tab {{ 'on' if loop.first }}" role="tab" id="tour-tab-{{ loop.index }}" aria-controls="tour-panel-{{ loop.index }}" aria-selected="{{ 'true' if loop.first else 'false' }}" tabindex="{{ 0 if loop.first else -1 }}">
+            <span class="tour-num">{{ '%02d'|format(loop.index) }}</span><span class="tour-label">{{ short }}</span></button>
+        {% endfor %}
+      </div>
+      <div class="tour-viewport">
+        {% for ic, short, title, text, points, time in tour %}
+          <section class="tour-panel {{ 'on' if loop.first }}" role="tabpanel" id="tour-panel-{{ loop.index }}" aria-labelledby="tour-tab-{{ loop.index }}">
+            <div class="tour-copy">
+              <span class="eyebrow">{{ _('Step {n} of {total}', n=loop.index, total=tour|length) }}</span>
+              <h3>{{ title }}</h3>
+              <p class="muted">{{ text }}</p>
+              <ul class="steps-list">{% for pt in points %}<li class="done"><span><i class="tick">{{ icon('check') }}</i>{{ pt }}</span></li>{% endfor %}</ul>
+              <p class="tour-time">{{ icon('clock') }} {{ time }}</p>
+            </div>
+            <div class="tour-visual" aria-hidden="true">
+              <span class="tour-icon">{{ icon(ic) }}</span>
+              {% if loop.index == 1 %}
+                <div class="tv-card"><div class="tv-line w60"></div><div class="tv-input"></div><div class="tv-input"></div><div class="tv-btn">{{ _('Create account') }}</div></div>
+              {% elif loop.index == 2 %}
+                <div class="tv-card">{% for n, w in [('Python', 4), ('SQL', 4), ('React', 3)] %}<div class="tv-row"><span>{{ n }}</span><span class="dots">{% for i in range(1, 6) %}<i class="{{ 'on' if i <= w }}"></i>{% endfor %}</span></div>{% endfor %}</div>
+              {% elif loop.index == 3 %}
+                <div class="tv-card">{% for n in ['project-code.zip', 'workshop-photo.jpg', 'reference-letter.pdf'] %}<div class="tv-row"><span dir="ltr">{{ icon('file') }} {{ n }}</span><span class="badge badge-ok">{{ icon('lock') }}{{ _('Private') }}</span></div>{% endfor %}</div>
+              {% elif loop.index == 4 %}
+                <div class="tv-card">{% for n, v in [(_('Knowledge'), 4), (_('Practical'), 5), (_('Evidence'), 4), (_('Communication'), 4)] %}<div class="meter-row"><span class="small">{{ n }}</span><span class="meter"><i style="width:{{ v * 20 }}%"></i></span><b class="small">{{ v }}</b></div>{% endfor %}
+                  <div class="score-total pass" style="margin-top:10px"><span>✓ {{ _('Verified') }}</span><b>17/20</b></div></div>
+              {% else %}
+                <div class="tv-card"><div class="tv-row"><b>Amina H.</b><span class="badge badge-verified">{{ icon('check') }}{{ _('2 assessed') }}</span></div>
+                  <div class="tv-link" dir="ltr">{{ icon('link') }} skillproof.org/p/Ye1g…</div><div class="tv-row muted small"><span>{{ icon('eye') }} {{ _('3 employers') }}</span><span>{{ _('Revoke anytime') }}</span></div></div>
+              {% endif %}
+            </div>
+          </section>
+        {% endfor %}
+      </div>
+      <div class="tour-nav">
+        <button type="button" class="btn btn-ghost" data-tour-prev>{{ icon('arrow-left') }} {{ _('Back') }}</button>
+        <div class="tour-dots" aria-hidden="true">{% for _x in tour %}<i class="{{ 'on' if loop.first }}"></i>{% endfor %}</div>
+        <button type="button" class="btn" data-tour-next data-next-label="{{ _('Next') }}"><span>{{ _('Next') }}</span> {{ icon('arrow-right') }}</button>
+        <a class="btn" data-tour-finish href="{{ url_for('dashboard') if current_user else url_for('register') }}" hidden>{{ _('Open my dashboard') if current_user else _('Get started free') }} {{ icon('arrow-right', 'flip-rtl') }}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="wrap grid g-3">
+    <div class="card feature"><span class="kpi-icon">{{ icon('check-circle') }}</span><h3>{{ _('Honest by design') }}</h3><p>{{ _('Self-declared and independently assessed skills are always shown apart, so employers know exactly what was checked.') }}</p></div>
+    <div class="card feature"><span class="kpi-icon">{{ icon('scale') }}</span><h3>{{ _('Fair and accountable') }}</h3><p>{{ _('Every decision records the assessor, scores and reasons. Candidates can appeal, and a different assessor reassesses.') }}</p></div>
+    <div class="card feature"><span class="kpi-icon">{{ icon('shield') }}</span><h3>{{ _('Your data, your choice') }}</h3><p>{{ _('Consent before sharing, a log of who viewed your profile, data export and full deletion.') }}</p></div>
+  </div>
+</section>
+
+<section class="section" id="employers">
+  <div class="wrap feature-split">
+    <div>
+      <span class="eyebrow">{{ _('For employers') }}</span>
+      <h2 style="font-size:clamp(1.5rem,3vw,2rem)">{{ _("Hire skilled people you'd otherwise miss") }}</h2>
+      <p class="muted">{{ _('Search candidates by verified skill, category and location. Each competency comes with a score, assessor and reference you can trust, even when the original certificates are gone.') }}</p>
+      <ul class="steps-list" style="margin:16px 0 22px">
+        <li class="done"><span><i class="tick">{{ icon('check') }}</i>{{ _('Filter by independently assessed skills') }}</span></li>
+        <li class="done"><span><i class="tick">{{ icon('check') }}</i>{{ _('Shortlist candidates and keep private notes') }}</span></li>
+        <li class="done"><span><i class="tick">{{ icon('check') }}</i>{{ _('Verified employer accounts protect candidates') }}</span></li>
       </ul>
-      <small class="muted">Ref SP-2026-00042 · Assessed against 4 published criteria</small>
+      <a class="btn" href="{{ url_for('register', role='employer') }}">{{ _('Create an employer account') }} {{ icon('arrow-right', 'flip-rtl') }}</a>
+    </div>
+    <div class="card" aria-hidden="true">
+      <div class="person-head"><span class="avatar av-1">JH</span><div><b>Jean-Pierre H.</b><small>{{ _('Network technician') }} · Kakuma</small></div></div>
+      <ul class="pills" style="margin:14px 0"><li class="ok">✓ {{ _('Network troubleshooting') }}</li><li class="ok">✓ {{ _('Windows support') }}</li><li>Cisco IOS</li></ul>
+      <div class="person-foot"><span>{{ icon('award') }} {{ _('2 verified skills') }}</span><span class="save-btn on">{{ icon('star') }} {{ _('Shortlisted') }}</span></div>
     </div>
   </div>
 </section>
 
-<section class="stats">
-  <div><b>{{ stats.candidates }}</b><span>people building profiles</span></div>
-  <div><b>{{ stats.verified }}</b><span>skills independently assessed</span></div>
-  <div><b>{{ stats.employers }}</b><span>employers looking for talent</span></div>
-</section>
-
-<h2 class="center">How it works</h2>
-<ol class="steps">
-  <li><b>Register</b><span>Create your account. Your data stays private until you choose to share.</span></li>
-  <li><b>Build your skills profile</b><span>List your skills, level and work experience, including informal work.</span></li>
-  <li><b>Submit evidence</b><span>Upload whatever you still have: certificates, photos of work, code, references.</span></li>
-  <li><b>Get assessed</b><span>Complete a short practical task. A trained assessor scores it against clear criteria.</span></li>
-  <li><b>Share your report</b><span>Get a digital competency report with a link you control, and you can switch it off any time.</span></li>
-</ol>
-
-<section class="grid-3">
-  <div class="card"><h3>Honest by design</h3><p>Self-declared skills and independently assessed ones are always shown separately, so employers know exactly what has been checked.</p></div>
-  <div class="card"><h3>Fair and accountable</h3><p>Every decision records who assessed it, the scores and the reasons. You can appeal, and a different assessor will reassess.</p></div>
-  <div class="card"><h3>Your data, your choice</h3><p>Built with Kenya's Data Protection Act, 2019 in mind: consent before sharing, access logs, data export and deletion.</p></div>
+<section class="section">
+  <div class="wrap">
+    <div class="cta">
+      <h2>{{ _('Ready to have your skills recognised?') }}</h2>
+      <p>{{ _('Join free. Not sure where to start? Ask our assistant in your language.') }}</p>
+      <div class="actions" style="justify-content:center;margin-top:20px">
+        <a class="btn btn-lg" href="{{ url_for('register') }}">{{ _('Create my profile') }}</a>
+        <button type="button" class="btn btn-lg btn-ghost" data-ai-open>{{ icon('chat') }} {{ _('Ask the assistant') }}</button>
+      </div>
+    </div>
+  </div>
 </section>
 {% endblock %}

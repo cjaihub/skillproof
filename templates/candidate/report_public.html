@@ -1,0 +1,8 @@
+{% extends "layouts/public.html" %}{% from "_macros.html" import icon with context %}
+{% block title %}{{ u.full_name }} · {{ _("Competency report") }}{% endblock %}
+{% block content %}
+<div class="wrap" style="max-width:980px;padding-top:32px;padding-bottom:20px">
+  <div class="callout ok no-print" style="margin-bottom:18px">{{ icon('shield') }}<p>{{ _("This report is shared by the candidate. Assessed competencies were independently verified by SkillProof assessors.") }} <button class="link-btn" data-print>{{ _("Print / save as PDF") }}</button></p></div>
+  {% include "_report_sheet.html" %}
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf with context %}
+{% block title %}{{ _('Skills test') }}{% endblock %}
+{% block crumbs %}<a href="{{ url_for('skills') }}">{{ _('Skills') }}</a>{{ icon('chevron-right', 'flip-rtl') }}<a href="{{ url_for('skill_detail', sid=s.id) }}">{{ s.name }}</a>{{ icon('chevron-right', 'flip-rtl') }}<span>{{ _('Skills test') }}</span>{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">{{ icon('clipboard') }} {{ _('Step 1 of 2') }}</span><h1>{{ _('Skills test') }}: {{ s.name }}</h1>
+    <p>{{ _('Answer on your own. Multiple-choice answers are marked automatically; an assessor reads your written answers.') }}
+      {% if t.source == 'ai' %}<span class="badge badge-info">{{ icon('sparkle') }}{{ _('Questions written by AI for this skill') }}</span>{% endif %}</p></div>
+</div>
+<form method="post" class="stack" id="test-form">
+  {{ csrf() }}<input type="hidden" name="test_id" value="{{ t.id }}">
+  <div class="progress"><i id="test-progress" style="width:0%"></i></div>
+  {% for q in qs.mcq %}{% set qi = loop.index0 %}
+    <fieldset class="panel q-card">
+      <div class="panel-body">
+        <legend class="q-title"><span class="tag">{{ loop.index }}/{{ qs.mcq|length }}</span> {{ q.question }}</legend>
+        <div class="q-options">
+          {% for o in q.options %}
+            <label class="choice q-opt"><input type="radio" name="q{{ qi }}" value="{{ loop.index0 }}" required {{ 'checked' if answers.get('q' ~ qi) == loop.index0 }}><b>{{ o }}</b></label>
+          {% endfor %}
+        </div>
+      </div>
+    </fieldset>
+  {% endfor %}
+  {% for sq in qs.short_questions %}
+    <section class="panel q-card"><div class="panel-body form">
+      <label class="field"><span><span class="tag">{{ _('Written') }} {{ loop.index }}</span> {{ sq }}</span>
+        <textarea name="s{{ loop.index0 }}" rows="5" minlength="20" required data-count="3000" maxlength="3000">{{ answers.get('s' ~ loop.index0, '') }}</textarea></label>
+    </div></section>
+  {% endfor %}
+  <div class="actions" style="justify-content:flex-end"><a class="btn btn-ghost" href="{{ url_for('skill_detail', sid=s.id) }}">{{ _('Finish later') }}</a>
+    <button class="btn btn-lg">{{ _('Submit test') }} {{ icon('arrow-right', 'flip-rtl') }}</button></div>
+</form>
+{% endblock %}

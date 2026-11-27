@@ -1,42 +1,52 @@
-{% extends "base.html" %}
-{% block title %}Privacy & data protection{% endblock %}
+{% extends "layouts/public.html" %}
+{% from "_macros.html" import icon with context %}
+{% block title %}{{ _("Privacy & data protection") }}{% endblock %}
 {% block content %}
+<div class="wrap">
 <article class="card prose">
-  <h1>Privacy &amp; data protection</h1>
-  <p class="muted">Prototype notice, designed with Kenya's Data Protection Act, 2019 in mind. Have it reviewed by a qualified data protection adviser before a live launch.</p>
+  <span class="eyebrow">{{ _("Trust & safety") }}</span>
+  <h1>{{ _("Privacy & data protection") }}</h1>
+  <div class="callout warn">{{ icon('info') }}<p>{{ _("This is a prototype notice designed with Kenya's Data Protection Act, 2019 in mind. Have it reviewed by a qualified data protection adviser before a live launch.") }}</p></div>
 
-  <h2>What we collect and why</h2>
+  <h2>{{ _("What we collect and why") }}</h2>
   <ul>
-    <li><b>Account details</b> (name, email, password stored only as a secure hash), so you can log in.</li>
-    <li><b>Your skills profile and work history</b>, to describe your competencies.</li>
-    <li><b>Evidence you upload</b> (certificates, work samples, links), so assessors can evaluate your skills.</li>
-    <li><b>Assessment results</b>, to produce your competency report.</li>
+    <li><b>{{ _("Account details") }}</b> {{ _("(name, email, password stored only as a secure hash), so you can log in securely.") }}</li>
+    <li><b>{{ _("Your skills profile and work history") }}</b>, {{ _("to describe your competencies.") }}</li>
+    <li><b>{{ _("Evidence you upload") }}</b> {{ _("(certificates, work samples, links), so assessors can evaluate your skills.") }}</li>
+    <li><b>{{ _("Assessment results") }}</b>, {{ _("to produce your competency report.") }}</li>
+    <li><b>{{ _("Security records") }}</b> {{ _("(login times, IP address, access log), to protect your account and show you who viewed your data.") }}</li>
+    <li><b>{{ _("Assistant questions") }}</b>: {{ _("when AI answers are switched on, what you type in the help chat is sent to our AI provider (Anthropic) together with your role, onboarding progress, current page and language, but not your name, email or files. SkillProof does not store chat transcripts. Don't type passwords, ID numbers or health information.") }}</li>
   </ul>
-  <p>We only collect what is needed for skills recognition (data minimisation). Please do <b>not</b> upload refugee ID numbers, passport scans or health information. They are not needed.</p>
+  <p>{{ _("We only collect what is needed for skills recognition. Please do") }} <b>{{ _("not") }}</b> {{ _("upload refugee ID numbers, passport scans or health information.") }}</p>
 
-  <h2>Who can see your information</h2>
+  <h2>{{ _("Who can see your information") }}</h2>
+  <div class="table-wrap">
   <table class="table">
-    <tr><th></th><th>Profile &amp; skills</th><th>Evidence files</th><th>Assessment results</th></tr>
-    <tr><td>You</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
-    <tr><td>Assessors</td><td>Only when you request an assessment</td><td>Yes, to assess</td><td>Yes</td></tr>
-    <tr><td>Employers</td><td><b>Only if you turn on sharing</b></td><td>Never</td><td>Only if you turn on sharing</td></tr>
-    <tr><td>Anyone with your link</td><td><b>Only if you turn on sharing</b></td><td>Never</td><td>Only if you turn on sharing</td></tr>
-  </table>
+    <thead><tr><th></th><th>{{ _("Profile & skills") }}</th><th>{{ _("Evidence files") }}</th><th>{{ _("Assessment results") }}</th></tr></thead>
+    <tbody>
+    <tr><td><b>{{ _("You") }}</b></td><td>{{ _("Yes") }}</td><td>{{ _("Yes") }}</td><td>{{ _("Yes") }}</td></tr>
+    <tr><td><b>{{ _("Assessors") }}</b></td><td>{{ _("Only when you request an assessment") }}</td><td>{{ _("Yes, to assess") }}</td><td>{{ _("Yes") }}</td></tr>
+    <tr><td><b>{{ _("Verified employers") }}</b></td><td>{{ _("Only if you turn on sharing") }}</td><td>{{ _("Never") }}</td><td>{{ _("Only if you turn on sharing") }}</td></tr>
+    <tr><td><b>{{ _("Anyone with your link") }}</b></td><td>{{ _("Only if you turn on sharing") }}</td><td>{{ _("Never") }}</td><td>{{ _("Only if you turn on sharing") }}</td></tr>
+    <tr><td><b>{{ _("Administrators") }}</b></td><td>{{ _("To run and secure the platform") }}</td><td>{{ _("For appeals and safety") }}</td><td>{{ _("Yes") }}</td></tr>
+    </tbody>
+  </table></div>
 
-  <h2>Your rights</h2>
+  <h2 id="rights">{{ _("Your rights") }}</h2>
   <ul>
-    <li><b>Consent:</b> sharing is off by default. You can turn it on or off at any time, and create a new link to cancel the old one.</li>
-    <li><b>Access:</b> see who viewed your profile and evidence in your access log, and download all your data as a file.</li>
-    <li><b>Correction:</b> edit your profile at any time, and appeal any assessment decision you believe is wrong.</li>
-    <li><b>Deletion:</b> delete your account and all your data, including uploaded files, from your account page.</li>
+    <li><b>{{ _("Consent") }}:</b> {{ _("sharing is off by default. Turn it on or off at any time, and create a new link to cancel the old one.") }}</li>
+    <li><b>{{ _("Access") }}:</b> {{ _("see who viewed your profile and evidence, and download all your data as a file.") }}</li>
+    <li><b>{{ _("Correction") }}:</b> {{ _("edit your profile at any time, and appeal any assessment decision you believe is wrong.") }}</li>
+    <li><b>{{ _("Deletion") }}:</b> {{ _("delete your account and all your data, including uploaded files.") }}</li>
   </ul>
 
-  <h2>How we protect it</h2>
+  <h2>{{ _("How we protect it") }}</h2>
   <ul>
-    <li>Passwords are salted and hashed, never stored in plain text.</li>
-    <li>Evidence files are stored outside the public website with random names, and are only served to you, assessors and administrators after a permission check.</li>
-    <li>Role-based access control separates candidates, assessors, employers and administrators.</li>
-    <li>An audit log records assessments, role changes, consent changes and every time someone views your data.</li>
+    <li>{{ _("Salted password hashing, account lockout after repeated failed logins, and email confirmation.") }}</li>
+    <li>{{ _("Employer and assessor accounts are checked by an administrator before use.") }}</li>
+    <li>{{ _("Evidence files are stored outside the public website under random names and served only after a permission check.") }}</li>
+    <li>{{ _("Role-based access control and an audit log of assessments, role changes, consent changes and every data view.") }}</li>
   </ul>
 </article>
+</div>
 {% endblock %}

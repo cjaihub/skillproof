@@ -1,0 +1,13 @@
+{% extends "layouts/auth.html" %}{% from "_macros.html" import icon, csrf with context %}
+{% block title %}{{ _('Reset password') }}{% endblock %}
+{% block content %}
+<div class="big-icon">{{ icon('lock') }}</div>
+<h1>{{ _('Forgot your password?') }}</h1>
+<p class="sub">{{ _("Enter the email you registered with and we'll send you a secure link to choose a new password.") }}</p>
+<form method="post" class="form">
+  {{ csrf() }}
+  <label class="field">{{ _('Email address') }}<input type="email" name="email" required autofocus autocomplete="email" dir="ltr"></label>
+  <button class="btn btn-lg btn-block">{{ _('Send reset link') }}</button>
+</form>
+<p class="center small" style="margin-top:18px"><a href="{{ url_for('login') }}">{{ icon('arrow-left', 'flip-rtl') }} {{ _('Back to log in') }}</a></p>
+{% endblock %}

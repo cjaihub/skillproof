@@ -1,0 +1,44 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, avatar, empty, pagination with context %}
+{% block title %}{{ _("Assessments") }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ _("Assessments") }}</h1><p>{{ _("Monitor the queue, turnaround and every decision made on the platform.") }}</p></div>
+  <a class="btn" href="{{ url_for('review_queue') }}">{{ icon('clipboard') }} {{ _("Open assessor queue") }}</a></div>
+
+<section class="panel">
+  <div class="panel-head"><h2>{{ icon('clock') }} {{ _("Queue (") }}{{ pending|length }})</h2><span class="tiny muted">{{ _("Target") }}: {{ sla }} {{ _("days") }}</span></div>
+  {% if pending %}
+  <div class="table-wrap"><table class="table responsive">
+    <thead><tr><th>{{ _("Candidate") }}</th><th>{{ _("Skill") }}</th><th>{{ _("Evidence") }}</th><th>{{ _("Waiting") }}</th></tr></thead>
+    <tbody>{% for s in pending %}{% set days = (now - s.requested_at).days if s.requested_at else 0 %}
+      <tr><td class="full"><div class="who">{{ avatar(s.owner, 'sm') }}<div><b>{{ s.owner.full_name }}</b><small>{{ s.owner.email }}</small></div></div></td>
+        <td><a href="{{ url_for('review', sid=s.id) }}"><b>{{ s.name }}</b></a><br><small class="muted">{{ s.category }}</small></td>
+        <td data-label="Evidence">{{ s.evidence|length }}</td>
+        <td><span class="badge {{ 'badge-bad' if days >= sla else 'badge-muted' }}">{{ days }} {{ _("day") }}{{ '' if days == 1 else 's' }}</span></td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}{{ empty(_("Queue is clear"), '', 'check-circle') }}{% endif %}
+</section>
+
+<section class="panel">
+  <div class="panel-head"><h2>{{ icon('award') }} {{ _("All decisions") }}</h2>
+    <form method="get" class="actions">
+      <select name="outcome" data-autosubmit aria-label="{{ _("Outcome") }}" style="width:auto;min-height:34px;padding-top:5px;padding-bottom:5px"><option value="">{{ _("All outcomes") }}</option><option value="verified" {{ 'selected' if outcome == 'verified' }}>{{ _("Verified") }}</option><option value="not_verified" {{ 'selected' if outcome == 'not_verified' }}>{{ _("Not verified") }}</option></select>
+      <select name="category" data-autosubmit aria-label="{{ _("Category") }}" style="width:auto;min-height:34px;padding-top:5px;padding-bottom:5px"><option value="">{{ _("All categories") }}</option>{% for c in CATEGORIES %}<option {{ 'selected' if c == cat }}>{{ c }}</option>{% endfor %}</select>
+    </form></div>
+  {% if pager.items %}
+  <div class="table-wrap"><table class="table responsive">
+    <thead><tr><th>{{ _("Reference") }}</th><th>{{ _("Candidate") }}</th><th>{{ _("Skill") }}</th><th>{{ _("Assessor") }}</th><th>{{ _("Score") }}</th><th>{{ _("Outcome") }}</th><th>{{ _("Date") }}</th></tr></thead>
+    <tbody>{% for a in pager.items %}
+      <tr><td><code>{{ a.reference }}</code></td>
+        <td><a href="{{ url_for('admin_user', uid=a.skill.user_id) }}">{{ a.skill.owner.full_name }}</a></td>
+        <td class="full"><a href="{{ url_for('review', sid=a.skill_id) }}">{{ a.skill.name }}</a></td>
+        <td><a href="{{ url_for('admin_user', uid=a.assessor_id) }}">{{ a.assessor.full_name }}</a></td>
+        <td><b>{{ a.total }}</b>/20</td>
+        <td><span class="badge badge-{{ a.outcome }}">{{ a.outcome.replace('_', ' ')|capitalize }}</span>{% if a.appeals %} <span class="badge badge-info">{{ _("Appealed") }}</span>{% endif %}</td>
+        <td class="nowrap small">{{ a.created_at|date }}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {{ pagination(pager, 'admin_assessments') }}
+  {% else %}{{ empty(_("No assessments yet"), '', 'award') }}{% endif %}
+</section>
+{% endblock %}

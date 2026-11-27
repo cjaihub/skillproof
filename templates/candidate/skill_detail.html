@@ -1,0 +1,97 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, badge, level_dots, empty with context %}
+{% block title %}{{ s.name }}{% endblock %}
+{% block crumbs %}<a href="{{ url_for('skills') }}">{{ _("Skills") }}</a>{{ icon('chevron-right') }}<span>{{ s.name }}</span>{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>{{ s.name }} {{ badge(s.status) }}</h1>
+    <p>{{ s.category }} · {{ s.years }} {{ _("years · claimed") }} {{ level_dots(s.claimed_level) }}</p></div>
+  <div class="actions">
+    {% if s.status in ('self_declared', 'not_verified') %}<a class="btn btn-ghost" href="{{ url_for('skill_edit', sid=s.id) }}">{{ icon('edit') }} {{ _("Edit") }}</a>{% endif %}
+    <form method="post" action="{{ url_for('skill_delete', sid=s.id) }}" data-confirm="{{ _("Delete this skill and its assessment history?") }}">{{ csrf() }}<button class="btn btn-ghost btn-danger">{{ icon('trash') }} {{ _("Delete") }}</button></form>
+  </div>
+</div>
+
+<div class="grid g-2">
+  <div class="stack">
+    {% if s.description %}<section class="card"><h3>{{ _("About this skill") }}</h3><p class="pre" style="margin:0"><span data-tr>{{ s.description }}</span></p></section>{% endif %}
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('file') }} {{ _("Evidence (") }}{{ s.evidence|length }})</h2><a class="btn btn-sm btn-soft" href="{{ url_for('evidence_list', skill=s.id) }}">{{ icon('plus') }} {{ _("Add") }}</a></div>
+      {% for e in s.evidence %}
+        <div class="ev-item"><span class="ev-icon">{{ icon('link' if e.link and not e.stored_name else 'file') }}</span>
+          <div class="grow"><b>{{ e.title }}</b> <span class="tag">{{ _(EVIDENCE_KINDS[e.kind]) }}</span>
+            <p>{% if e.stored_name %}<a href="{{ url_for('evidence_file', eid=e.id) }}">{{ icon('download') }} {{ e.original_name }}</a> {% endif %}
+               {% if e.link %}<a href="{{ e.link }}" target="_blank" rel="noopener noreferrer">{{ icon('link') }} {{ _("Open link") }}</a>{% endif %}</p></div></div>
+      {% else %}
+        {{ empty(_("No evidence linked"), _("Evidence is optional but helps assessors. Lost your certificates? Upload work samples, photos or references instead."), 'file') }}
+      {% endfor %}
+    </section>
+  </div>
+
+  <section class="panel">
+    {% if s.status in ('self_declared', 'not_verified') %}
+      {% set test = s.tests|selectattr('submitted_at')|first %}
+      {% set open_test = s.tests|rejectattr('submitted_at')|first %}
+      <div class="panel-head"><h2>{{ icon('clipboard') }} {{ _('Get this skill verified') }}</h2></div>
+      <div class="panel-body stack" style="gap:16px">
+        <div class="vstep {{ 'done' if test }}">
+          <span class="vstep-num">{% if test %}{{ icon('check') }}{% else %}1{% endif %}</span>
+          <div class="grow"><b>{{ _('Skills test') }}</b>
+            {% if test %}<p class="small muted">{{ _('Submitted {when}: {score}/{total} multiple-choice correct.', when=test.submitted_at|ago, score=test.mcq_score, total=test.mcq_total) }}
+              <a href="{{ url_for('skill_test', sid=s.id, retake=1) }}">{{ _('Retake') }}</a></p>
+            {% else %}<p class="small muted">{{ _('About 10 minutes: multiple-choice plus two short written answers about your field.') }}</p>
+              <a class="btn btn-sm" href="{{ url_for('skill_test', sid=s.id) }}">{{ _('Continue test') if open_test else _('Start test') }} {{ icon('arrow-right', 'flip-rtl') }}</a>{% endif %}
+          </div>
+        </div>
+        <div class="vstep {{ 'locked' if not test }}" id="practical">
+          <span class="vstep-num">2</span>
+          <div class="grow"><b>{{ _('Practical task') }}</b>
+            <div class="task" style="margin-top:8px"><b>{{ icon('info') }} {{ _('Your task') }}</b><p>{{ task }}</p></div>
+            <form method="post" action="{{ url_for('skill_request', sid=s.id) }}" class="form" style="margin-top:12px">
+              {{ csrf() }}
+              <label class="field">{{ _('Your response') }}<textarea name="task_response" rows="7" minlength="50" required data-count="5000" maxlength="5000" {{ 'disabled' if not test }}><span data-tr>{{ s.task_response }}</span></textarea></label>
+              <p class="tiny muted" style="margin:0">{{ _('An assessor scores 4 criteria from 0 to 5. You pass with {mark}/20 or more and no criterion below 2.', mark=PASS_MARK) }}</p>
+              <div><button class="btn" {{ 'disabled' if not test }}>{{ icon('arrow-right', 'flip-rtl') }} {{ _('Submit for assessment') }}</button></div>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% elif s.status == 'pending' %}
+      <div class="panel-head"><h2>{{ icon('clock') }} {{ _("Awaiting assessment") }}</h2><span class="badge badge-info">{{ _("Submitted") }} {{ s.requested_at|ago }}</span></div>
+      <div class="panel-body"><div class="task"><b>{{ _("Your response") }}</b><p class="pre"><span data-tr>{{ s.task_response }}</span></p></div></div>
+    {% else %}
+      <div class="panel-head"><h2>{{ icon('check-circle') }} {{ _("Practical task response") }}</h2></div>
+      <div class="panel-body"><p class="pre small" style="margin:0"><span data-tr>{{ s.task_response }}</span></p></div>
+    {% endif %}
+    <details class="panel-foot"><summary class="link-btn">{{ _("Assessment criteria") }}</summary>
+      <ul class="small" style="margin:10px 0 0;padding-left:18px">{% for k, v in CRITERIA.items() %}<li>{{ v }}</li>{% endfor %}</ul></details>
+  </section>
+</div>
+
+{% if s.assessments %}
+<section class="panel">
+  <div class="panel-head"><h2>{{ icon('award') }} {{ _("Assessment history") }}</h2></div>
+  {% for a in s.assessments %}
+    <div class="assessment">
+      <div class="assessment-head">
+        <span class="badge badge-{{ a.outcome }}">{{ _('Verified') if a.outcome == 'verified' else _('Not yet verified') }}</span>
+        <b>{{ a.total }}/20</b>{% if a.assessed_level %} · {{ _("assessed") }} {{ level_dots(a.assessed_level) }}{% endif %}
+        <span class="muted small">· {{ a.assessor.full_name }}{% if a.assessor.organisation %}, {{ a.assessor.organisation }}{% endif %} · {{ a.created_at|date }} · <code>{{ a.reference }}</code></span>
+      </div>
+      <div class="scores">
+        {% for k in CRITERIA %}{% set v = a['score_' ~ k] %}<div class="meter-row"><span>{{ k|capitalize }}</span><span class="meter {{ 'low' if v < 2 }}"><i style="width:{{ v * 20 }}%"></i></span><b>{{ v }}</b></div>{% endfor %}
+      </div>
+      <div class="callout {{ 'ok' if a.outcome == 'verified' else 'warn' }}">{{ icon('info') }}<p><b>{{ _("Assessor feedback") }}:</b> <span data-tr>{{ a.comments }}</span></p></div>
+      {% for ap in a.appeals %}<p class="small" style="margin:10px 0 0"><span class="badge badge-{{ 'info' if ap.status == 'open' else ('ok' if ap.status == 'upheld' else 'warn') }}">{{ _("Appeal") }} {{ ap.status }}</span> <span data-tr>{{ ap.resolution }}</span></p>{% endfor %}
+      {% if loop.first and not a.appeals|selectattr('status', 'equalto', 'open')|list and s.status != 'pending' %}
+        <details style="margin-top:12px"><summary class="link-btn">{{ icon('scale') }} {{ _("Disagree? Appeal or request a correction") }}</summary>
+          <form method="post" action="{{ url_for('appeal', aid=a.id) }}" class="form" style="margin-top:12px">
+            {{ csrf() }}
+            <label class="field">{{ _("Explain what was wrong or missed") }}<textarea name="reason" rows="4" minlength="20" required></textarea></label>
+            <div><button class="btn btn-ghost">{{ _("Submit appeal") }}</button></div>
+          </form></details>
+      {% endif %}
+    </div>
+  {% endfor %}
+</section>
+{% endif %}
+{% endblock %}

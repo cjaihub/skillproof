@@ -1,9 +1,92 @@
+{% macro icon(name, cls='') -%}<svg class="i {{ cls }}" aria-hidden="true"><use href="#i-{{ name }}"/></svg>{%- endmacro %}
+
 {% macro csrf() %}<input type="hidden" name="csrf" value="{{ csrf_token }}">{% endmacro %}
 
+{# Language picker: links keep the current page and query string #}
+{% macro lang_menu(dark=false) -%}
+<details class="dropdown lang-menu">
+  <summary class="icon-btn lang-btn {{ 'on-dark' if dark }}" aria-label="{{ _('Language') }}" title="{{ _('Language') }}">{{ icon('globe') }}<span class="lang-code">{{ LANG|upper }}</span></summary>
+  <div class="menu">
+    <div class="menu-head"><b>{{ _('Language') }}</b></div>
+    {% for code, (native, english, dir) in LANGUAGES.items() %}
+      {% set a = request.args.to_dict() %}{% set _x = a.update(lang=code) %}
+      <a href="{{ request.path }}?{{ a|urlencode }}" lang="{{ code }}" dir="{{ dir }}" class="{{ 'current' if code == LANG }}" hreflang="{{ code }}">
+        <span class="grow">{{ native }}</span>{% if code != 'en' %}<small class="muted" dir="ltr">{{ english }}</small>{% endif %}{% if lang_coverage(code) < 50 %}<small class="tag" title="{{ _('Partly translated: some screens show English') }}">beta</small>{% endif %}{% if code == LANG %}{{ icon('check') }}{% endif %}</a>
+    {% endfor %}
+  </div>
+</details>
+{%- endmacro %}
+
+{# Theme picker: Light / Dark / System (follows the device) #}
+{% macro theme_menu() -%}
+<details class="dropdown theme-menu">
+  <summary class="icon-btn" aria-label="{{ _('Appearance') }}" title="{{ _('Appearance') }}">{{ icon('sun', 'tp-light') }}{{ icon('moon', 'tp-dark') }}{{ icon('monitor', 'tp-system') }}</summary>
+  <div class="menu">
+    <div class="menu-head"><b>{{ _('Appearance') }}</b></div>
+    <button type="button" data-theme-set="light">{{ icon('sun') }} <span class="grow">{{ _('Light') }}</span>{{ icon('check', 'tick-light') }}</button>
+    <button type="button" data-theme-set="dark">{{ icon('moon') }} <span class="grow">{{ _('Dark') }}</span>{{ icon('check', 'tick-dark') }}</button>
+    <button type="button" data-theme-set="system">{{ icon('monitor') }} <span class="grow">{{ _('System') }}</span>{{ icon('check', 'tick-system') }}</button>
+  </div>
+</details>
+{%- endmacro %}
+
 {% macro badge(status) -%}
-<span class="badge badge-{{ status }}">{% if status == 'verified' %}✓ {% endif %}{{ SKILL_STATUSES[status] }}</span>
+<span class="badge badge-{{ status }}">{% if status == 'verified' %}{{ icon('check') }}{% endif %}{{ _(SKILL_STATUSES[status]) }}</span>
+{%- endmacro %}
+
+{% macro account_badge(u) -%}
+<span class="badge badge-acc-{{ u.status }}">{{ _(u.status_label) }}</span>
+{%- endmacro %}
+
+{% macro verified_tick(u) -%}
+{% if u.identity_verified %}<span class="vtick" title="{{ _("Identity verified by SkillProof") }}">{{ icon('shield') }}</span>{% endif %}
 {%- endmacro %}
 
 {% macro level_dots(n, label=true) -%}
-<span class="dots" title="{{ LEVELS[n] }}">{% for i in range(1, 6) %}<i class="{{ 'on' if i <= n }}"></i>{% endfor %}</span>{% if label %} <small>{{ LEVELS[n] }}</small>{% endif %}
+<span class="dots" title="{{ _(LEVELS[n]) }}">{% for i in range(1, 6) %}<i class="{{ 'on' if i <= n }}"></i>{% endfor %}</span>{% if label %} <small class="muted">{{ _(LEVELS[n]) }}</small>{% endif %}
+{%- endmacro %}
+
+{% macro avatar(u, size='') -%}
+<span class="avatar {{ size }} av-{{ u.id % 6 }}" aria-hidden="true">{{ u.initials }}</span>
+{%- endmacro %}
+
+{% macro kpi(label, value, icon_name, sub='', delta=None, tone='') -%}
+<div class="kpi {{ tone }}">
+  <div class="kpi-top"><span class="kpi-label">{{ label }}</span><span class="kpi-icon">{{ icon(icon_name) }}</span></div>
+  <div class="kpi-value">{{ value if value is not none else '–' }}</div>
+  <div class="kpi-sub">
+    {% if delta is not none %}<span class="delta {{ 'up' if delta >= 0 else 'down' }}">{{ icon('trend-up' if delta >= 0 else 'trend-down') }}{{ delta|abs }}%</span>{% endif %}
+    {{ sub }}
+  </div>
+</div>
+{%- endmacro %}
+
+{% macro empty(title, text='', icon_name='layers', action=None, action_url=None) -%}
+<div class="empty">
+  <span class="empty-icon">{{ icon(icon_name) }}</span>
+  <b>{{ title }}</b>
+  {% if text %}<p>{{ text }}</p>{% endif %}
+  {% if action %}<a class="btn btn-sm" href="{{ action_url }}">{{ action }}</a>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro pagination(pager, endpoint) -%}
+{% if pager.pages > 1 %}
+<nav class="pager" aria-label="{{ _("Pages") }}">
+  {% set args = request.args.to_dict() %}
+  {% if pager.has_prev %}{% set _x = args.update(page=pager.prev_num) %}<a class="btn btn-ghost btn-sm" href="{{ url_for(endpoint, **args) }}">{{ icon('arrow-left') }} {{ _("Prev") }}</a>{% endif %}
+  <span class="muted small">{{ _("Page") }} {{ pager.page }} {{ _("of") }} {{ pager.pages }} · {{ pager.total }} {{ _("results") }}</span>
+  {% if pager.has_next %}{% set _x = args.update(page=pager.next_num) %}<a class="btn btn-ghost btn-sm" href="{{ url_for(endpoint, **args) }}">{{ _("Next") }} {{ icon('arrow-right') }}</a>{% endif %}
+</nav>
+{% endif %}
+{%- endmacro %}
+
+{% macro password_field(name='password', label=None, autocomplete='new-password', meter=true, match=None) -%}
+<label class="field">{{ label or _('Password') }}
+  <span class="pw-wrap">
+    <input type="password" name="{{ name }}" required minlength="8" autocomplete="{{ autocomplete }}" dir="ltr" {% if meter %}data-strength data-labels='{{ [_("Weak"), _("Fair"), _("Good"), _("Strong"), _("Use 8+ characters with letters and numbers.")]|tojson }}'{% endif %} {% if match %}data-match="{{ match }}" data-mismatch="{{ _('Passwords do not match') }}"{% endif %}>
+    <button type="button" class="pw-toggle" data-pw-toggle aria-label="{{ _('Show password') }}">{{ icon('eye') }}</button>
+  </span>
+  {% if meter %}<span class="pw-meter" aria-hidden="true"><i></i><i></i><i></i><i></i></span><small class="pw-hint muted">{{ _('Use 8+ characters with letters and numbers.') }}</small>{% endif %}
+</label>
 {%- endmacro %}

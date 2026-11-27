@@ -1,0 +1,39 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf with context %}
+{% set editing = s and s.id %}
+{% block title %}{{ _('Edit skill') if editing else _('Add a skill') }}{% endblock %}
+{% block crumbs %}<a href="{{ url_for('skills') }}">{{ _("Skills") }}</a>{{ icon('chevron-right') }}<span>{{ _('Edit') if editing else _('New skill') }}</span>{% endblock %}
+{% block content %}
+<div class="grid g-side">
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('award') }} {{ _('Edit skill') if editing else _('Add a skill') }}</h2></div>
+    <form method="post" class="form panel-body">
+      {{ csrf() }}
+      <label class="field">{{ _("Skill") }}<input name="name" required maxlength="120" value="{{ s.name if s else '' }}" placeholder="{{ _("e.g. Python web development, Electrical installation, Midwifery") }}"></label>
+      <div class="row">
+        <label class="field">{{ _("Category") }}<select name="category">{% for c in CATEGORIES %}<option {{ 'selected' if s and s.category == c }}>{{ c }}</option>{% endfor %}</select></label>
+        <label class="field">{{ _("Years of experience") }}<input type="number" name="years" min="0" max="60" inputmode="numeric" value="{{ s.years if s else 0 }}"></label>
+      </div>
+      <fieldset><legend>{{ _("How good are you at it?") }}</legend>
+        <div class="seg">{% for n, name in LEVELS.items() %}
+          <label><input type="radio" name="claimed_level" value="{{ n }}" {{ 'checked' if (s.claimed_level if s else 3) == n }}><span>{{ n }} · {{ name }}</span></label>{% endfor %}</div>
+      </fieldset>
+      <label class="field">{{ _("Where and how have you used this skill?") }}<textarea name="description" rows="5" data-count="1000" maxlength="1000">{{ s.description if s else '' }}</textarea></label>
+      <div class="actions"><button class="btn">{{ icon('check') }} {{ _("Save skill") }}</button>
+        <a class="btn btn-ghost" href="{{ url_for('skill_detail', sid=s.id) if editing else url_for('skills') }}">{{ _("Cancel") }}</a></div>
+    </form>
+  </section>
+  <aside class="stack">
+    <div class="callout">{{ icon('info') }}<p>{{ _("New skills are shown as") }} <b>self-declared</b>{{ _(". To make one") }} <b>{{ _("independently assessed") }}</b>, {{ _("add evidence and complete a short practical task.") }}</p></div>
+    <div class="card small">
+      <h3>{{ _("Level guide") }}</h3>
+      <dl class="kv" style="grid-template-columns:90px 1fr">
+        <dt>{{ _("Beginner") }}</dt><dd>{{ _("Learning, needs close supervision") }}</dd>
+        <dt>{{ _("Basic") }}</dt><dd>{{ _("Handles simple tasks with help") }}</dd>
+        <dt>{{ _("Competent") }}</dt><dd>{{ _("Works independently on routine work") }}</dd>
+        <dt>{{ _("Proficient") }}</dt><dd>{{ _("Handles complex work, guides others") }}</dd>
+        <dt>{{ _("Expert") }}</dt><dd>{{ _("Recognised authority, sets standards") }}</dd>
+      </dl>
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, avatar, account_badge, verified_tick, empty, pagination with context %}
+{% block title %}{{ _("Users") }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>{{ _("User management") }}</h1><p>{{ _("Approve, verify, suspend and manage roles for everyone on the platform.") }}</p></div>
+  <a class="btn btn-ghost" href="{{ url_for('admin_users_csv', **args) }}">{{ icon('download') }} {{ _("Export CSV") }}</a>
+</div>
+
+{% set st = args.get('status', '') %}
+<nav class="tabs" aria-label="{{ _("Filter by status") }}">
+  {% for key, label in [('', 'All'), ('active', 'Active'), ('pending', 'Pending'), ('suspended', 'Suspended'), ('rejected', 'Rejected')] %}
+    {% set a = args.to_dict() %}{% set _x = a.update(status=key, page=1) %}
+    <a class="{{ 'on' if st == key }}" href="{{ url_for('admin_users', **a) }}">{{ label }}<em>{{ counts.values()|sum if not key else counts.get(key, 0) }}</em></a>
+  {% endfor %}
+</nav>
+
+<form class="panel" method="post" action="{{ url_for('admin_users_bulk') }}" data-bulk>
+  {{ csrf() }}<input type="hidden" name="next" value="{{ request.full_path }}">
+  <div class="toolbar">
+    <span class="search-input grow">{{ icon('search') }}<input form="filter" name="q" value="{{ args.get('q', '') }}" placeholder="{{ _("Search name, email or organisation") }}"></span>
+    <select form="filter" name="role" aria-label="{{ _("Role") }}"><option value="">{{ _("All roles") }}</option>{% for r in roles %}<option value="{{ r }}" {{ 'selected' if args.get('role') == r }}>{{ r|capitalize }}</option>{% endfor %}</select>
+    <select form="filter" name="verified" aria-label="{{ _("Verification") }}"><option value="">{{ _("Any verification") }}</option>
+      <option value="identity" {{ 'selected' if args.get('verified') == 'identity' }}>{{ _("Identity verified") }}</option>
+      <option value="unverified" {{ 'selected' if args.get('verified') == 'unverified' }}>{{ _("Identity unverified") }}</option>
+      <option value="email_unverified" {{ 'selected' if args.get('verified') == 'email_unverified' }}>{{ _("Email unconfirmed") }}</option></select>
+    <select form="filter" name="sort" aria-label="{{ _("Sort") }}"><option value="newest">{{ _("Newest") }}</option><option value="oldest" {{ 'selected' if args.get('sort') == 'oldest' }}>{{ _("Oldest") }}</option>
+      <option value="name" {{ 'selected' if args.get('sort') == 'name' }}>{{ _("Name") }}</option><option value="login" {{ 'selected' if args.get('sort') == 'login' }}>{{ _("Last login") }}</option></select>
+    <button form="filter" class="btn btn-ghost">{{ icon('filter') }} {{ _("Apply") }}</button>
+  </div>
+  <div class="bulkbar">
+    <b><span data-bulk-count>0</span> {{ _("selected") }}</b>
+    <select name="action" aria-label="{{ _("Bulk action") }}" style="width:auto;min-height:32px;padding:4px 30px 4px 8px">
+      <option value="approve">{{ _("Approve") }}</option><option value="verify_identity">{{ _("Verify identity") }}</option><option value="verify_email">{{ _("Mark email confirmed") }}</option>
+      <option value="suspend">{{ _("Suspend") }}</option><option value="reactivate">{{ _("Reactivate") }}</option></select>
+    <input name="reason" placeholder="{{ _("Reason (required for suspend)") }}">
+    <button class="btn btn-sm" data-confirm-bulk>{{ _("Apply to selected") }}</button>
+  </div>
+  {% if pager.items %}
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th style="width:36px"><input type="checkbox" data-select-all aria-label="{{ _("Select all") }}"></th><th>{{ _("User") }}</th><th>{{ _("Role") }}</th><th>{{ _("Status") }}</th><th>{{ _("Verification") }}</th><th>{{ _("Joined") }}</th><th>{{ _("Last login") }}</th><th></th></tr></thead>
+    <tbody>{% for x in pager.items %}
+      <tr>
+        <td>{% if x.id != current_user.id %}<input type="checkbox" name="ids" value="{{ x.id }}" aria-label="Select {{ x.full_name }}">{% endif %}</td>
+        <td><a class="who" href="{{ url_for('admin_user', uid=x.id) }}" style="color:inherit;text-decoration:none">{{ avatar(x, 'sm') }}<div><b>{{ x.full_name }} {{ verified_tick(x) }}</b><small>{{ x.email }}{% if x.organisation %} · {{ x.organisation|truncate(24) }}{% endif %}</small></div></a></td>
+        <td><span class="tag">{{ x.role }}</span></td>
+        <td>{{ account_badge(x) }}{% if x.locked_until and x.locked_until > now %} <span class="badge badge-bad">{{ icon('lock') }}{{ _("Locked") }}</span>{% endif %}</td>
+        <td class="nowrap small">{% if x.email_verified %}<span title="{{ _("Email confirmed") }}" style="color:var(--ok)">{{ icon('mail') }}</span>{% else %}<span title="{{ _("Email not confirmed") }}" class="muted">{{ icon('mail') }}</span>{% endif %}
+          {% if x.identity_verified %}<span title="{{ _("Identity verified") }}" style="color:var(--info)">{{ icon('shield') }}</span>{% else %}<span title="{{ _("Identity not verified") }}" class="muted">{{ icon('shield') }}</span>{% endif %}</td>
+        <td class="nowrap small">{{ x.created_at|date }}</td>
+        <td class="nowrap small muted">{{ x.last_login_at|ago }}</td>
+        <td class="cell-actions"><a class="btn btn-sm btn-ghost" href="{{ url_for('admin_user', uid=x.id) }}">{{ _("Manage") }}</a></td>
+      </tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {{ pagination(pager, 'admin_users') }}
+  {% else %}{{ empty(_("No users match"), _("Try clearing a filter."), 'users') }}{% endif %}
+</form>
+<form id="filter" method="get" hidden>{% if st %}<input type="hidden" name="status" value="{{ st }}">{% endif %}</form>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% from "_macros.html" import icon, level_dots, avatar with context %}
+{# Premium competency report. Shows all competence areas, or one when ?area=<category> is given. #}
+{% set all_areas = u.competence_areas() %}
+{% set focus = request.args.get('area') if request.args.get('area') in all_areas|map(attribute='category')|list else none %}
+{% set areas = u.competence_areas(focus) if focus else all_areas %}
+{% set verified_all = areas|map(attribute='verified')|sum(start=[]) %}
+{% set top_level = areas|map(attribute='assessed_level')|max if areas else 0 %}
+{% set area_icons = {'Software development': 'monitor', 'IT support & networking': 'globe', 'Healthcare': 'activity',
+                     'Teaching & training': 'users', 'Trades & vocational': 'settings', 'Business & finance': 'chart', 'Other': 'star'} %}
+<article class="report-x">
+  <header class="rx-hero">
+    <div class="rx-hero-main">
+      <span class="rx-avatar">{{ avatar(u, 'xl') }}{% if u.identity_verified %}<i class="rx-id" title="{{ _('Identity verified by SkillProof') }}">{{ icon('shield') }}</i>{% endif %}</span>
+      <div class="rx-id-block">
+        <span class="rx-eyebrow">{{ icon('award') }} {{ _('Digital competency report') }}{% if focus %} · {{ focus }}{% endif %}</span>
+        <h1>{{ u.full_name }}</h1>
+        {% if u.headline %}<p class="rx-headline"><span data-tr>{{ u.headline }}</span></p>{% endif %}
+        <p class="rx-meta">
+          {% if u.location %}<span>{{ icon('pin') }} {{ u.location }}</span>{% endif %}
+          {% if u.identity_verified %}<span class="rx-chip">{{ icon('shield') }} {{ _('Identity verified') }}</span>{% endif %}
+          {% if u.job_access == 'granted' %}<span class="rx-chip gold">{{ icon('briefcase') }} {{ _('Job-ready') }}</span>{% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="rx-seal" aria-label="{{ _('Independently assessed skills') }}: {{ verified_all|length }}">
+      <svg viewBox="0 0 120 120" aria-hidden="true"><defs><path id="rx-arc" d="M60,60 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0"/></defs>
+        <circle cx="60" cy="60" r="56" class="rx-seal-ring"/><circle cx="60" cy="60" r="38" class="rx-seal-core"/>
+        <text class="rx-seal-text"><textPath href="#rx-arc" startOffset="0">• {{ _('SkillProof verified') }} • {{ _('independent assessment') }} </textPath></text></svg>
+      <b>{{ verified_all|length }}</b><span>{{ _('assessed') }}</span>
+    </div>
+  </header>
+
+  <div class="rx-stats">
+    <div><b>{{ verified_all|length }}</b><span>{{ _('Independently assessed skills') }}</span></div>
+    <div><b>{{ areas|length }}</b><span>{{ _('Competence areas') }}</span></div>
+    <div><b>{{ u.total_years or '–' }}</b><span>{{ _('Years of work experience') }}</span></div>
+    <div><b>{{ _(LEVELS[top_level]) if top_level else '–' }}</b><span>{{ _('Highest assessed level') }}</span></div>
+  </div>
+
+  {% if u.bio and not focus %}<section class="rx-section"><h2 class="rx-h">{{ icon('user') }} {{ _('About') }}</h2><p class="rx-bio"><span data-tr>{{ u.bio }}</span></p></section>{% endif %}
+
+  {% if areas|length > 1 %}
+  <section class="rx-section">
+    <h2 class="rx-h">{{ icon('layers') }} {{ _('Competence areas') }}</h2>
+    <div class="rx-areas">
+      {% for a in areas %}
+        <a class="rx-area-card" href="#area-{{ loop.index }}">
+          <span class="rx-area-icon">{{ icon(area_icons.get(a.category, 'star')) }}</span>
+          <b>{{ a.category }}</b>
+          <span class="rx-area-level">{% if a.assessed_level %}{{ level_dots(a.assessed_level, false) }} {{ _(LEVELS[a.assessed_level]) }}{% else %}<span class="muted">{{ _('Self-declared') }}</span>{% endif %}</span>
+          <span class="rx-area-foot"><span>{{ a.verified|length }} {{ _('assessed') }} · {{ a.declared|length }} {{ _('self-declared') }}</span>{% if a.avg_score %}<em>{{ a.avg_score }}/20</em>{% endif %}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% for a in areas %}
+  <section class="rx-section rx-area" id="area-{{ loop.index }}">
+    <div class="rx-area-head">
+      <span class="rx-area-icon lg">{{ icon(area_icons.get(a.category, 'star')) }}</span>
+      <div class="grow"><h2>{{ a.category }}</h2>
+        <p class="muted small">{{ a.verified|length }} {{ _('independently assessed') }} · {{ a.declared|length }} {{ _('self-declared') }}{% if a.years %} · {{ _('up to {n} years', n=a.years) }}{% endif %}</p></div>
+      {% if a.assessed_level %}<span class="rx-level">{{ _(LEVELS[a.assessed_level]) }}</span>{% endif %}
+    </div>
+
+    {% if a.criteria %}
+    <div class="rx-criteria">
+      {% for k, v in a.criteria.items() %}
+        <div><span>{{ {'knowledge': _('Knowledge'), 'practical': _('Practical'), 'evidence': _('Evidence'), 'communication': _('Communication')}[k] }}</span>
+          <span class="rx-bar"><i style="width:{{ (v / 5 * 100)|round }}%"></i></span><b>{{ v }}</b></div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if a.verified %}
+    <div class="rx-skills">
+      {% for s in a.verified %}{% set x = s.latest_assessment %}
+        <div class="rx-skill">
+          <div class="rx-score" style="--p: {{ (x.total / 20 * 100)|round }}"><b>{{ x.total }}</b><small>/20</small></div>
+          <div class="grow">
+            <div class="rx-skill-top"><b>{{ s.name }}</b><span class="badge badge-verified">{{ icon('check') }}{{ _('Verified') }}</span></div>
+            <div class="small">{{ level_dots(x.assessed_level) }}</div>
+            <div class="rx-minibars" aria-label="{{ _('Scores by criterion') }}">
+              {% for k in ('knowledge', 'practical', 'evidence', 'communication') %}{% set v = x['score_' ~ k] %}
+                <span title="{{ k|capitalize }}: {{ v }}/5"><i style="height:{{ v * 20 }}%"></i></span>{% endfor %}
+            </div>
+            <p class="rx-assessor">{{ icon('user-check') }} {{ x.assessor.full_name }}{% if x.assessor.organisation %}, {{ x.assessor.organisation }}{% endif %} · {{ x.created_at|date }} · <code>{{ x.reference }}</code></p>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if a.declared %}
+      <p class="rx-sub">{{ icon('layers') }} {{ _('Self-declared') }} <small class="muted">({{ _('not independently verified') }})</small></p>
+      <ul class="pills">{% for s in a.declared %}<li>{{ s.name }} · {{ s.years }} {{ _('yr') }} · {{ _(LEVELS[s.claimed_level]) }}{% if s.status == 'pending' %} · <em>{{ _('assessment in progress') }}</em>{% endif %}</li>{% endfor %}</ul>
+    {% endif %}
+  </section>
+  {% else %}
+  <section class="rx-section"><p class="muted">{{ _('No skills added yet.') }}</p></section>
+  {% endfor %}
+
+  {% if u.experiences and not focus %}
+  <section class="rx-section">
+    <h2 class="rx-h">{{ icon('briefcase') }} {{ _('Work experience') }} <small class="muted">({{ _('self-declared') }})</small></h2>
+    <ol class="rx-timeline">
+      {% for e in u.experiences %}
+        <li><span class="rx-dot"></span><div><b>{{ e.title }}</b>{% if e.organisation %} · {{ e.organisation }}{% endif %}
+          <small>{{ e.country }}{% if e.start_year %} · {{ e.start_year }}–{{ e.end_year or _('present') }}{% endif %}</small>
+          {% if e.description %}<p><span data-tr>{{ e.description }}</span></p>{% endif %}</div></li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+
+  <footer class="rx-foot">
+    <div class="rx-verify">{{ icon('shield') }}
+      <div><b>{{ _('How to read and verify this report') }}</b>
+        <p>{{ _('Assessed skills were scored 0–5 by a SkillProof assessor on four published criteria: technical knowledge, practical ability, evidence quality and communication. A skill is verified at {mark}/20 or more with no criterion below 2. Self-declared items are the candidate’s own statements. Quote the reference code to SkillProof to confirm any result.', mark=PASS_MARK) }}</p></div>
+    </div>
+    <p class="tiny muted">{{ _('Generated {date}', date=now|date) }} · SkillProof · {{ _("Shared with the candidate's consent") }}</p>
+  </footer>
+</article>

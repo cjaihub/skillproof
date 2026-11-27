@@ -1,0 +1,63 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, avatar, verified_tick, kpi, empty with context %}
+{% block title %}{{ _("Hiring dashboard") }}{% endblock %}
+{% block content %}
+{% set saved = shortlist|map(attribute='candidate_id')|list %}
+<section class="hello">
+  <h1>{{ _("Find your next hire") }}, {{ current_user.first_name }}</h1>
+  <p>{{ kpis.verified }} {{ _("candidate") }}{{ '' if kpis.verified == 1 else 's' }} {{ _("with independently assessed skills") }} {{ 'is' if kpis.verified == 1 else 'are' }} {{ _("open to opportunities right now.") }}</p>
+  <form class="actions" action="{{ url_for('talent') }}" method="get" style="max-width:560px">
+    <input name="q" placeholder="{{ _("Try “Python”, “nursing” or “electrician”") }}" style="flex:1;min-width:200px;border:0" aria-label="{{ _("Search") }}">
+    <button class="btn">{{ icon('search') }} {{ _("Search") }}</button>
+  </form>
+  <div class="actions" style="margin-top:12px"><a class="btn btn-ghost" href="{{ url_for('job_edit') }}">{{ icon('plus') }} {{ _('Post a job') }}</a>
+    <a class="btn btn-ghost" href="{{ url_for('employer_jobs') }}">{{ icon('briefcase') }} {{ _('My jobs') }}</a></div>
+</section>
+
+<div class="kpis">
+  {{ kpi(_("Candidates sharing"), kpis.pool, 'users', _("Consented to be found")) }}
+  {{ kpi(_("With verified skills"), kpis.verified, 'award', _("Independently assessed"), tone='info') }}
+  {{ kpi(_("Your shortlist"), kpis.shortlist, 'star', _("Saved candidates"), tone='warn') }}
+  {{ kpi(_("Profiles viewed"), kpis.viewed, 'eye', _("By you"), tone='pink') }}
+</div>
+
+<div class="grid g-main">
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('star') }} {{ _("Shortlist") }}</h2><a class="btn btn-sm btn-ghost" href="{{ url_for('talent') }}">{{ icon('search') }} {{ _("Find more") }}</a></div>
+    {% if shortlist %}
+    <ul class="list">
+      {% for e in shortlist %}{% set p = e.candidate %}
+        <li>{{ avatar(p) }}
+          <span class="grow"><a href="{{ url_for('talent_profile', uid=p.id) }}"><b>{{ p.full_name }}</b></a> {{ verified_tick(p) }}
+            <small>{{ p.headline|truncate(50) }} · {{ p.verified_skills|length }} {{ _("verified skill") }}{{ '' if p.verified_skills|length == 1 else 's' }}</small>
+            {% if e.note %}<small style="color:var(--ink-2)">📝 {{ e.note }}</small>{% endif %}</span>
+          <a class="btn btn-sm btn-ghost hide-sm" href="{{ url_for('talent_profile', uid=p.id) }}">{{ _("View") }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+    {% else %}{{ empty(_("No one shortlisted yet"), _("Star candidates while searching to keep track of them here."), 'star', _("Search talent"), url_for('talent')) }}{% endif %}
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('chart') }} {{ _("Verified talent by category") }}</h2></div>
+    <div class="panel-body">
+      {% if cats %}<div class="chart" data-chart='{{ {"type":"hbar","labels":cats|map(attribute=0)|list,"series":[{"name":"Candidates","values":cats|map(attribute=1)|list}]}|tojson }}'></div>
+      {% else %}<p class="muted small">{{ _("No verified candidates yet.") }}</p>{% endif %}
+    </div>
+  </section>
+</div>
+
+<section class="panel">
+  <div class="panel-head"><h2>{{ icon('award') }} {{ _("Recently verified candidates") }}</h2></div>
+  <div class="panel-body">
+    {% if newest %}<div class="grid g-3">{% for p in newest %}{% include "employer/_person_card.html" %}{% endfor %}</div>
+    {% else %}{{ empty(_("No verified candidates yet"), '', 'users') }}{% endif %}
+  </div>
+</section>
+
+{% if recent %}
+<section class="panel">
+  <div class="panel-head"><h2>{{ icon('clock') }} {{ _("Recently viewed") }}</h2></div>
+  <ul class="list">{% for p in recent %}<li>{{ avatar(p, 'sm') }}<span class="grow"><a href="{{ url_for('talent_profile', uid=p.id) }}"><b>{{ p.full_name }}</b></a><small>{{ p.headline|truncate(60) }}</small></span></li>{% endfor %}</ul>
+</section>
+{% endif %}
+{% endblock %}

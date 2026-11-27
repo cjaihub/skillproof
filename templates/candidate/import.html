@@ -1,0 +1,50 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, empty with context %}
+{% block title %}{{ _('Import with AI') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">{{ icon('sparkle') }} {{ _('Smart import') }}</span><h1>{{ _('Fill your profile from a document') }}</h1>
+    <p>{{ _('Upload a CV, certificate, reference letter or photo of your work. AI reads it and suggests skills, work history and corrections. You choose what to keep.') }}</p></div>
+</div>
+
+<div class="grid g-side">
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('upload') }} {{ _('Upload a document') }}</h2>
+      <span class="badge {{ 'badge-ok' if ai_on else 'badge-muted' }}">{{ icon('sparkle') }}{{ _('AI reading') if ai_on else _('Basic reading') }}</span></div>
+    <form method="post" enctype="multipart/form-data" class="form panel-body" data-busy="{{ _('Reading your document… this can take up to a minute.') }}">
+      {{ csrf() }}
+      <label class="dropzone" data-dropzone>
+        <input type="file" name="file" required accept=".pdf,.docx,.txt,.png,.jpg,.jpeg,.webp" data-maxmb="10">
+        <span class="dz-icon">{{ icon('upload') }}</span>
+        <b>{{ _('Drop a file here or tap to choose') }}</b>
+        <small class="muted">{{ _('PDF, Word (.docx), photo (JPG, PNG) or text · max 10 MB') }}</small>
+        <span class="dz-name" data-dz-name></span>
+      </label>
+      <div class="callout warn">{{ icon('alert') }}<p class="small">{{ _("Don't upload ID cards, passports or refugee documents. They aren't needed and will be rejected.") }}</p></div>
+      <button class="btn btn-lg btn-block">{{ icon('sparkle') }} {{ _('Read my document') }}</button>
+      <p class="tiny muted" style="margin:0">{{ _('With AI reading on, the file is sent to our AI provider (Anthropic) to extract details. Nothing is added to your profile until you accept it.') }}</p>
+    </form>
+  </section>
+
+  <aside class="stack">
+    <section class="card small">
+      <h3>{{ icon('check-circle') }} {{ _('What AI can do with your file') }}</h3>
+      <ul class="steps-list">
+        <li class="done"><span><i class="tick">{{ icon('check') }}</i>{{ _('Find skills and estimate your level') }}</span></li>
+        <li class="done"><span><i class="tick">{{ icon('check') }}</i>{{ _('Add jobs and dates to your work history') }}</span></li>
+        <li class="done"><span><i class="tick">{{ icon('check') }}</i>{{ _('Suggest a headline and summary') }}</span></li>
+        <li class="done"><span><i class="tick">{{ icon('check') }}</i>{{ _('Spot mistakes and inconsistencies to correct') }}</span></li>
+        <li class="done"><span><i class="tick">{{ icon('check') }}</i>{{ _('Save the file as evidence for assessors') }}</span></li>
+      </ul>
+    </section>
+    {% if imports %}
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('clock') }} {{ _('Recent imports') }}</h2></div>
+      <ul class="list">{% for i in imports %}
+        <li><span class="ev-icon">{{ icon('file') }}</span><span class="grow"><a href="{{ url_for('import_review', iid=i.id) }}"><b>{{ i.original_name|truncate(32) }}</b></a><small>{{ i.created_at|ago }} · {{ 'AI' if i.mode == 'ai' else _('basic') }}</small></span>
+          <span class="badge {{ {'ready':'badge-info','applied':'badge-ok','discarded':'badge-muted'}[i.status] }}">{{ {'ready': _('To review'), 'applied': _('Applied'), 'discarded': _('Discarded')}[i.status] }}</span></li>
+      {% endfor %}</ul>
+    </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

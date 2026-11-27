@@ -1,0 +1,17 @@
+{# expects p, saved (set of ids) #}
+{% from "_macros.html" import icon, csrf, avatar, verified_tick with context %}
+<div class="card person" style="cursor:default">
+  <a class="person-head" href="{{ url_for('talent_profile', uid=p.id) }}" style="color:inherit;text-decoration:none">{{ avatar(p) }}
+    <div style="min-width:0"><b>{{ p.full_name }} {{ verified_tick(p) }}</b><small>{{ p.headline|truncate(48) }}</small></div></a>
+  <ul class="pills">
+    {% for s in p.skills if s.status == 'verified' %}<li class="ok">✓ {{ s.name }}</li>{% endfor %}
+    {% for s in p.skills if s.status != 'verified' %}{% if loop.index <= 3 %}<li>{{ s.name }}</li>{% endif %}{% endfor %}
+  </ul>
+  <div class="person-foot">
+    <span>{% if p.location %}{{ icon('pin') }} {{ p.location|truncate(22) }}{% else %}{{ icon('award') }} {{ p.verified_skills|length }} {{ _("verified") }}{% endif %}</span>
+    {% if current_user.role == 'employer' %}
+    <form method="post" action="{{ url_for('shortlist_toggle', uid=p.id) }}">{{ csrf() }}<input type="hidden" name="next" value="{{ request.full_path }}">
+      <button class="link-btn save-btn {{ 'on' if p.id in saved }}" title="{{ _('Remove from shortlist') if p.id in saved else _('Add to shortlist') }}">{{ icon('star') }} {{ _('Shortlisted') if p.id in saved else _('Shortlist') }}</button></form>
+    {% else %}<a href="{{ url_for('talent_profile', uid=p.id) }}">{{ _("View") }} {{ icon('arrow-right') }}</a>{% endif %}
+  </div>
+</div>

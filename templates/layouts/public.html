@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, lang_menu, theme_menu with context %}
+{% block body_class %}{{ _("public") }}{% endblock %}
+{% block shell %}
+<header class="site-header">
+  <div class="wrap site-header-inner">
+    <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">{{ icon('check') }}</span><span>SkillProof</span></a>
+    <div class="header-tools">
+      <nav id="site-nav" class="site-nav">
+        <a href="{{ url_for('index') }}#how">{{ _('How it works') }}</a>
+        <a href="{{ url_for('index') }}#employers">{{ _('For employers') }}</a>
+        <a href="{{ url_for('privacy') }}">{{ _('Privacy') }}</a>
+        {% if current_user %}
+          <a class="btn btn-sm" href="{{ url_for('dashboard') }}">{{ _('Open dashboard') }} {{ icon('arrow-right', 'flip-rtl') }}</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">{{ _('Log in') }}</a>
+          <a class="btn btn-sm" href="{{ url_for('register') }}">{{ _('Get started') }}</a>
+        {% endif %}
+      </nav>
+      {{ lang_menu() }}
+      {{ theme_menu() }}
+      <button class="icon-btn site-menu-btn" data-toggle-class="#site-nav:open" aria-label="{{ _('Menu') }}" aria-controls="site-nav">{{ icon('menu') }}</button>
+    </div>
+  </div>
+</header>
+<main id="main">{% block content %}{% endblock %}</main>
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div>
+      <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">{{ icon('check') }}</span><span>SkillProof</span></a>
+      <p class="muted small">{{ _('Digital skills recognition and validation for refugees and displaced professionals.') }}</p>
+    </div>
+    <div><b>{{ _('Platform') }}</b><a href="{{ url_for('register') }}">{{ _('Create account') }}</a><a href="{{ url_for('register', role='employer') }}">{{ _('Hire talent') }}</a><a href="{{ url_for('register', role='assessor') }}">{{ _('Become an assessor') }}</a></div>
+    <div><b>{{ _('Trust') }}</b><a href="{{ url_for('privacy') }}">{{ _('Privacy & data protection') }}</a><a href="{{ url_for('privacy') }}#rights">{{ _('Your rights') }}</a></div>
+  </div>
+  <div class="wrap footer-bottom muted small">© {{ now.year }} SkillProof · {{ _("Designed with Kenya's Data Protection Act, 2019 in mind") }}</div>
+</footer>
+{% endblock %}

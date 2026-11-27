@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, avatar, verified_tick, lang_menu, theme_menu with context %}
+{% block body_class %}app-page{% endblock %}
+{% block shell %}
+{% set u = current_user %}
+{% set nav = {
+  'candidate': [
+    (_('Overview'), [('dashboard', 'grid', _('Dashboard'), none), ('profile', 'user', _('My profile'), none),
+                  ('skills', 'award', _('Skills'), none), ('evidence_list', 'file', _('Evidence'), none),
+                  ('report', 'share', _('Competency report'), none), ('import_docs', 'sparkle', _('Import with AI'), none)]),
+    (_('Jobs'), [('jobs', 'briefcase', _('Find jobs'), none), ('my_applications', 'clipboard', _('My applications'), none),
+                 ('job_access', 'shield', _('Job access'), none)]),
+    (_('Privacy'), [('my_access_log', 'eye', _('Who viewed me'), none)]),
+  ],
+  'assessor': [
+    (_('Workspace'), [('review_queue', 'clipboard', _('Assessment queue'), none)]),
+  ],
+  'employer': [
+    (_('Hiring'), [('employer_dashboard', 'grid', _('Dashboard'), none), ('employer_jobs', 'briefcase', _('My jobs'), none),
+                   ('talent', 'search', _('Find talent'), none)]),
+  ],
+  'admin': [
+    (_('Platform'), [('admin', 'grid', _('Dashboard'), none), ('admin_users', 'users', _('Users'), none),
+                  ('admin_verifications', 'user-check', _('Verifications'), 'pending'),
+                  ('admin_assessments', 'clipboard', _('Assessments'), none), ('admin_jobs', 'briefcase', _('Jobs'), 'jobs'),
+                  ('admin_appeals', 'scale', _('Appeals'), none)]),
+    (_('Tools'), [('review_queue', 'award', _('Assess skills'), none), ('talent', 'search', _('Talent search'), none),
+               ('admin_audit', 'activity', _('Audit log'), none), ('admin_settings', 'settings', _('Settings'), none)]),
+  ],
+}[u.role] if u.status == 'active' else [] %}
+{% set role_names = {'candidate': _('Candidate workspace'), 'assessor': _('Assessor workspace'), 'employer': _('Employer workspace'), 'admin': _('Admin workspace')} %}
+<div class="app" id="app">
+  <aside class="sidebar" id="sidebar" aria-label="{{ _('Main menu') }}">
+    <div class="sidebar-head">
+      <a class="brand brand-light" href="{{ url_for('dashboard') if u.status == 'active' else url_for('pending') }}"><span class="brand-mark">{{ icon('check') }}</span><span>SkillProof</span></a>
+      <button class="icon-btn only-mobile sidebar-close" data-toggle-class="#app:nav-open" aria-label="{{ _('Close menu') }}">{{ icon('x') }}</button>
+    </div>
+    <div class="role-chip">{{ icon({'candidate':'user','assessor':'clipboard','employer':'briefcase','admin':'shield'}[u.role]) }} {{ role_names[u.role] }}</div>
+    <nav class="side-nav">
+      {% for section, items in nav %}
+        <div class="side-section">{{ section }}</div>
+        {% for endpoint, ic, label, counter in items %}
+          <a href="{{ url_for(endpoint) }}" class="{{ 'active' if request.endpoint == endpoint or (endpoint == 'skills' and request.endpoint in ('skill_detail','skill_new','skill_edit','skill_test')) or (endpoint == 'import_docs' and request.endpoint == 'import_review') or (endpoint == 'jobs' and request.endpoint == 'job_detail') or (endpoint == 'employer_jobs' and request.endpoint in ('employer_job', 'job_edit')) or (endpoint == 'admin_users' and request.endpoint == 'admin_user') or (endpoint == 'talent' and request.endpoint == 'talent_profile') or (endpoint == 'review_queue' and request.endpoint == 'review') }}">
+            {{ icon(ic) }}<span>{{ label }}</span>
+            {% if counter %}{% set pc = side_counts.get(counter, 0) if side_counts is defined else 0 %}{% if pc %}<em class="count">{{ pc }}</em>{% endif %}{% endif %}
+          </a>
+        {% endfor %}
+      {% endfor %}
+      <div class="side-section">{{ _('Account') }}</div>
+      <a href="{{ url_for('notifications') }}" class="{{ 'active' if request.endpoint == 'notifications' }}">{{ icon('bell') }}<span>{{ _('Notifications') }}</span>{% if unread %}<em class="count">{{ unread }}</em>{% endif %}</a>
+      <a href="{{ url_for('account') }}" class="{{ 'active' if request.endpoint == 'account' }}">{{ icon('settings') }}<span>{{ _('Account & security') }}</span></a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="me">{{ avatar(u) }}<div><b>{{ u.full_name|truncate(22) }} {{ verified_tick(u) }}</b><small>{{ u.email|truncate(26) }}</small></div></div>
+      <form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf" value="{{ csrf_token }}">
+        <button class="icon-btn" title="{{ _('Log out') }}" aria-label="{{ _('Log out') }}">{{ icon('logout', 'flip-rtl') }}</button></form>
+    </div>
+  </aside>
+  <div class="scrim" data-toggle-class="#app:nav-open"></div>
+
+  <div class="main-col">
+    <header class="topbar">
+      <button class="icon-btn only-mobile" data-toggle-class="#app:nav-open" aria-label="{{ _('Open menu') }}" aria-controls="sidebar">{{ icon('menu') }}</button>
+      <div class="crumbs">{% block crumbs %}<span>{{ self.title() }}</span>{% endblock %}</div>
+      <div class="topbar-actions">
+        {% if u.role in ('employer', 'admin') and u.status == 'active' %}
+        <form class="top-search hide-md" action="{{ url_for('talent') }}" method="get">{{ icon('search') }}<input name="q" placeholder="{{ _('Search verified talent…') }}" aria-label="{{ _('Search talent') }}"></form>
+        {% endif %}
+        {{ lang_menu() }}
+        <span class="hide-sm">{{ theme_menu() }}</span>
+        <details class="dropdown notif">
+          <summary class="icon-btn" aria-label="{{ _('Notifications') }}">{{ icon('bell') }}{% if unread %}<span class="dot-badge">{{ unread if unread < 10 else '9+' }}</span>{% endif %}</summary>
+          <div class="menu menu-wide">
+            <div class="menu-head"><b>{{ _('Notifications') }}</b>
+              {% if unread %}<form method="post" action="{{ url_for('notifications_read') }}"><input type="hidden" name="csrf" value="{{ csrf_token }}"><input type="hidden" name="next" value="{{ request.path }}"><button class="link-btn">{{ _('Mark all read') }}</button></form>{% endif %}</div>
+            {% for n in recent_notes %}
+              <a class="note {{ 'unread' if not n.read }}" href="{{ url_for('notification_open', nid=n.id) }}"><span class="note-dot n-{{ n.kind }}"></span><span><span data-tr>{{ n.message }}</span><small>{{ n.created_at|ago }}</small></span></a>
+            {% else %}<p class="muted small pad">{{ _("You're all caught up.") }}</p>{% endfor %}
+            <a class="menu-foot" href="{{ url_for('notifications') }}">{{ _('View all') }}</a>
+          </div>
+        </details>
+        <details class="dropdown">
+          <summary class="user-btn" aria-label="{{ _('Account menu') }}">{{ avatar(u, 'sm') }}<span class="hide-sm">{{ u.first_name }}</span>{{ icon('chevron-down') }}</summary>
+          <div class="menu">
+            <div class="menu-head"><div><b>{{ u.full_name }}</b><small class="muted">{{ role_names[u.role] }}{% if u.organisation %} · {{ u.organisation }}{% endif %}</small></div></div>
+            {% if u.role == 'candidate' %}<a href="{{ url_for('report') }}">{{ icon('share') }} {{ _('My report') }}</a>{% endif %}
+            <a href="{{ url_for('account') }}">{{ icon('settings') }} {{ _('Account & security') }}</a>
+            <a href="{{ url_for('account_export') }}">{{ icon('download') }} {{ _('Download my data') }}</a>
+            <div class="menu-sep only-sm-flex"><span class="tiny muted">{{ _('Appearance') }}</span>
+              <span class="seg-mini"><button type="button" data-theme-set="light" aria-label="{{ _('Light') }}">{{ icon('sun') }}</button><button type="button" data-theme-set="dark" aria-label="{{ _('Dark') }}">{{ icon('moon') }}</button><button type="button" data-theme-set="system" aria-label="{{ _('System') }}">{{ icon('monitor') }}</button></span></div>
+            <form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button>{{ icon('logout', 'flip-rtl') }} {{ _('Log out') }}</button></form>
+          </div>
+        </details>
+      </div>
+    </header>
+
+    {% if setting('announcement') %}<div class="announce">{{ icon('info') }} {{ setting('announcement') }}</div>{% endif %}
+    {% if u and not u.email_verified and request.endpoint not in ('pending',) %}
+      <div class="banner">
+        {{ icon('mail') }}<span>{{ _('Please confirm your email address') }} <b dir="ltr">{{ u.email }}</b> {{ _('to secure your account.') }}</span>
+        <form method="post" action="{{ url_for('resend_verification') }}"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button class="btn btn-sm btn-ghost">{{ _('Resend link') }}</button></form>
+      </div>
+    {% endif %}
+
+    <main id="main" class="content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}

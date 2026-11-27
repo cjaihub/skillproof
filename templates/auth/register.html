@@ -1,0 +1,58 @@
+{% extends "layouts/auth.html" %}{% from "_macros.html" import icon, csrf, password_field with context %}
+{% block title %}{{ _('Create account') }}{% endblock %}
+{% block content %}
+{% set role = form.get('role') or 'candidate' %}
+{% set submitted = form.get('email') is not none %}
+<h1>{{ _('Create your account') }}</h1>
+<p class="sub">{{ _('It takes about two minutes. Your information stays private until you choose to share it.') }}</p>
+
+<form method="post" class="form" data-wizard novalidate>
+  {{ csrf() }}
+  <div class="stepper" aria-hidden="true"><span class="on">1 · {{ _('Account type') }}</span><span>2 · {{ _('Your details') }}</span><span>3 · {{ _('Security') }}</span></div>
+
+  <section class="wizard-step current">
+    <fieldset>
+      <legend>{{ _('How will you use SkillProof?') }}</legend>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="role" value="candidate" {{ 'checked' if role == 'candidate' }}>
+          {{ icon('award') }}<b>{{ _('Get my skills recognised') }}</b><small>{{ _('Build a profile, submit evidence and get assessed.') }}</small></label>
+        <label class="choice"><input type="radio" name="role" value="employer" {{ 'checked' if role == 'employer' }}>
+          {{ icon('briefcase') }}<b>{{ _('Hire verified talent') }}</b><small>{{ _('Search assessed candidates who chose to share.') }}</small></label>
+        {% if 'assessor' in roles %}
+        <label class="choice"><input type="radio" name="role" value="assessor" {{ 'checked' if role == 'assessor' }}>
+          {{ icon('clipboard') }}<b>{{ _('Become an assessor') }}</b><small>{{ _('Professionals who evaluate skills. Reviewed by our team.') }}</small></label>
+        {% endif %}
+      </div>
+    </fieldset>
+    <div class="callout" data-role-only="employer,assessor" hidden>{{ icon('shield') }}
+      <p data-role-text='{{ {"employer": _("Employer accounts are checked by our team before they can search candidates. This protects refugees from fake recruiters."), "assessor": _("Assessor applications are reviewed by an administrator before you can assess anyone.")}|tojson }}'></p></div>
+    <div class="wizard-nav"><span></span><button type="button" class="btn" data-next>{{ _('Continue') }} {{ icon('arrow-right') }}</button></div>
+  </section>
+
+  <section class="wizard-step" {% if submitted %}data-has-error="1"{% endif %}>
+    <label class="field">{{ _('Full name') }}<input name="full_name" required minlength="2" value="{{ form.get('full_name', '') }}" autocomplete="name" placeholder="{{ _("As you'd like employers to see it") }}"></label>
+    <label class="field">{{ _('Email address') }}<input type="email" name="email" required value="{{ form.get('email', '') }}" autocomplete="email" placeholder="you@example.com" dir="ltr">
+      <small class="hint">{{ _("We'll send a link to confirm it.") }}</small></label>
+    <label class="field">{{ _('Location') }} <small class="hint">({{ _('optional') }})</small><input name="location" value="{{ form.get('location', '') }}" placeholder="{{ _('e.g. Nairobi, Kenya') }}" autocomplete="address-level2"></label>
+    <div data-role-only="employer,assessor" hidden>
+      <label class="field">{{ _('Organisation') }}<input name="organisation" required value="{{ form.get('organisation', '') }}" autocomplete="organization"></label>
+    </div>
+    <div data-role-only="employer" hidden>
+      <label class="field">{{ _('Company website') }} <small class="hint">({{ _('helps us verify you') }})</small><input type="url" name="website" value="{{ form.get('website', '') }}" placeholder="https://" dir="ltr"></label>
+    </div>
+    <div data-role-only="assessor" hidden>
+      <label class="field">{{ _('Areas you can assess') }}<input name="expertise" value="{{ form.get('expertise', '') }}" placeholder="{{ _('e.g. Software development, networking') }}"></label>
+    </div>
+    <div class="wizard-nav"><button type="button" class="btn btn-ghost" data-prev>{{ icon('arrow-left') }} {{ _('Back') }}</button><button type="button" class="btn" data-next>{{ _('Continue') }} {{ icon('arrow-right') }}</button></div>
+  </section>
+
+  <section class="wizard-step">
+    {{ password_field('password', _('Create a password')) }}
+    {{ password_field('confirm', _('Confirm password'), meter=false, match='password') }}
+    <label class="check"><input type="checkbox" name="agree" value="1" required> <span>{{ _('I have read the') }} <a href="{{ url_for('privacy') }}" target="_blank">{{ _('privacy notice') }}</a> {{ _('and agree that SkillProof stores my information to provide this service. Nothing is shared with employers until I turn sharing on.') }}</span></label>
+    <div class="wizard-nav"><button type="button" class="btn btn-ghost" data-prev>{{ icon('arrow-left') }} {{ _('Back') }}</button><button class="btn">{{ _('Create account') }} {{ icon('check') }}</button></div>
+  </section>
+</form>
+<p class="center muted small" style="margin-top:20px">{{ _('Already have an account?') }} <a href="{{ url_for('login') }}"><b>{{ _('Log in') }}</b></a></p>
+<p class="center tiny muted" style="margin-top:8px">{{ _('Need help? Tap the assistant button for step-by-step guidance in your language.') }}</p>
+{% endblock %}

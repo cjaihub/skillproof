@@ -1,0 +1,107 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, badge, level_dots, kpi, empty with context %}
+{% block title %}{{ _('Dashboard') }}{% endblock %}
+{% block content %}
+<section class="hello">
+  <h1>{{ _('Hello, {name}', name=u.first_name) }} 👋</h1>
+  <p>{% if kpis.verified %}{{ _('Independently assessed skills: {n}.', n=kpis.verified) }}{% if u.consent_share %} {{ _('Your report is visible to verified employers.') }}{% endif %}
+     {% else %}{{ _("Let's turn your experience into a trusted, verifiable record employers can rely on.") }}{% endif %}</p>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('skill_new') }}">{{ icon('plus') }} {{ _('Add a skill') }}</a>
+    <a class="btn btn-ghost" href="{{ url_for('import_docs') }}">{{ icon('sparkle') }} {{ _('Import CV with AI') }}</a>
+    <a class="btn btn-ghost" href="{{ url_for('report') }}">{{ icon('share') }} {{ _('View my report') }}</a>
+  </div>
+</section>
+
+<div class="kpis">
+  {{ kpi(_('Skills on profile'), kpis.skills, 'layers', _('{n} awaiting assessment', n=kpis.pending) if kpis.pending else _('Add skills you can prove')) }}
+  {{ kpi(_('Independently assessed'), kpis.verified, 'award', _('Verified by an assessor')) }}
+  {{ kpi(_('Evidence items'), kpis.evidence, 'file', _('Stored privately'), tone='info') }}
+  {{ kpi(_('Profile views'), kpis.views, 'eye', _('{n} by employers', n=kpis.employer_views), tone='pink') }}
+</div>
+
+<div class="grid g-main">
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('award') }} {{ _('My skills') }}</h2><a class="btn btn-sm btn-ghost" href="{{ url_for('skills') }}">{{ _('View all') }}</a></div>
+      {% if u.skills %}
+      <div class="table-wrap"><table class="table responsive">
+        <thead><tr><th>{{ _('Skill') }}</th><th>{{ _('Claimed level') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead>
+        <tbody>
+        {% for s in (u.skills|sort(attribute='created_at', reverse=true))[:6] %}
+          <tr>
+            <td class="full"><a href="{{ url_for('skill_detail', sid=s.id) }}"><b>{{ s.name }}</b></a><br><small class="muted">{{ s.category }} · {{ s.years }} {{ _("yr") }} · {{ s.evidence|length }} {{ _("evidence") }}</small></td>
+            <td>{{ level_dots(s.claimed_level) }}</td>
+            <td>{{ badge(s.status) }}</td>
+            <td class="cell-actions"><a class="btn btn-sm {{ 'btn-soft' if s.status in ('self_declared','not_verified') else 'btn-ghost' }}" href="{{ url_for('skill_detail', sid=s.id) }}">
+              {{ _('Get assessed') if s.status in ('self_declared','not_verified') else _('Open') }}</a></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      {% else %}
+        {{ empty(_('No skills yet'), _('Add the skills you have used at work, including informal and volunteer work.'), 'award', _('Add your first skill'), url_for('skill_new')) }}
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('chart') }} {{ _('Profile views · last 30 days') }}</h2><a class="btn btn-sm btn-ghost" href="{{ url_for('my_access_log') }}">{{ _('Access log') }}</a></div>
+      <div class="panel-body">
+        {% if kpis.views %}<div class="chart" data-chart='{{ {"type":"bar","labels":chart.labels,"series":[{"name":"Views","values":chart.data}]}|tojson }}'></div>
+        {% else %}{{ empty(_('No views yet'), _('Turn on sharing from your report page so verified employers can find you.'), 'eye', _('Share my report'), url_for('report')) }}{% endif %}
+      </div>
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="panel job-card-dash">
+      <div class="panel-head"><h2>{{ icon('briefcase') }} {{ _('Jobs') }}</h2>
+        <span class="badge {{ {'none':'badge-muted','requested':'badge-info','granted':'badge-ok','declined':'badge-warn'}[u.job_access] }}">{{ {'none': _('Not job-ready yet'), 'requested': _('Under review'), 'granted': _('Access granted'), 'declined': _('Not approved')}[u.job_access] }}</span></div>
+      <div class="panel-body">
+        {% if u.job_access == 'granted' %}
+          <p class="small muted" style="margin-top:0">{{ _('You can apply to jobs from verified employers.') }}</p>
+          <div class="actions"><a class="btn btn-sm" href="{{ url_for('jobs') }}">{{ icon('search') }} {{ _('Find jobs') }}</a><a class="btn btn-sm btn-ghost" href="{{ url_for('my_applications') }}">{{ _('My applications') }}</a></div>
+        {% elif u.job_access == 'requested' %}
+          <p class="small muted" style="margin:0">{{ _("An administrator is reviewing your verified skills. We'll notify you.") }}</p>
+        {% else %}
+          <p class="small muted" style="margin-top:0">{{ _('Get a skill verified, then ask an administrator for access to job openings.') }}</p>
+          <a class="btn btn-sm" href="{{ url_for('job_access') }}">{{ _('Get job-ready') }} {{ icon('arrow-right', 'flip-rtl') }}</a>
+        {% endif %}
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('activity') }} {{ _('Profile strength') }}</h2></div>
+      <div class="panel-body" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+        <div class="ring" style="--p: {{ u.completeness }}"><b>{{ u.completeness }}%</b></div>
+        <p class="small muted" style="flex:1;min-width:150px;margin:0">{% if u.completeness >= 85 %}{{ _('Excellent! Your profile is ready for employers.') }}{% else %}{{ _('Complete the steps below to stand out to employers.') }}{% endif %}</p>
+      </div>
+      <ul class="steps-list todo" style="padding:0 12px 14px">
+        {% for label, ok, link in steps %}
+          <li class="{{ 'done' if ok }}">{% if ok %}<span><i class="tick">{{ icon('check') }}</i>{{ _(label) }}</span>{% else %}<a href="{{ link }}"><i class="tick"></i>{{ _(label) }} {{ icon('chevron-right', 'flip-rtl') }}</a>{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('bell') }} {{ _('Recent activity') }}</h2><a class="btn btn-sm btn-ghost" href="{{ url_for('notifications') }}">{{ _('All') }}</a></div>
+      <ul class="timeline" style="padding-top:16px">
+        {% for n in activity %}
+          <li><span class="tl-dot" style="{{ 'background:var(--ok-bg);color:var(--ok)' if n.kind == 'success' else ('background:var(--warn-bg);color:var(--warn)' if n.kind == 'warning' else '') }}">{{ icon({'success':'check','warning':'alert'}.get(n.kind, 'bell')) }}</span>
+            <div><a href="{{ url_for('notification_open', nid=n.id) }}" style="color:var(--ink)"><span data-tr>{{ n.message }}</span></a><small>{{ n.created_at|ago }}</small></div></li>
+        {% else %}<li class="muted small">{{ _('Nothing yet.') }}</li>{% endfor %}
+      </ul>
+    </section>
+
+    {% if appeals %}
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('scale') }} {{ _('My appeals') }}</h2></div>
+      <ul class="list">
+        {% for ap in appeals %}
+          <li><span class="grow"><b>{{ ap.assessment.skill.name }}</b><small>{{ ap.created_at|date }}{% if ap.resolution %} · <span data-tr>{{ ap.resolution|truncate(60) }}</span>{% endif %}</small></span>
+            <span class="badge badge-{{ 'pending' if ap.status == 'open' else ('ok' if ap.status == 'upheld' else 'warn') }}">{{ ap.status|capitalize }}</span></li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

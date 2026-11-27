@@ -1,0 +1,132 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, avatar, account_badge, verified_tick, badge, empty with context %}
+{% block title %}{{ u.full_name }}{% endblock %}
+{% block crumbs %}<a href="{{ url_for('admin_users') }}">{{ _("Users") }}</a>{{ icon('chevron-right') }}<span>{{ u.full_name }}</span>{% endblock %}
+{% macro act(action, label, cls='btn-ghost', ic='check', reason=false, confirm='') -%}
+<form method="post" action="{{ url_for('admin_user_action', uid=u.id) }}" class="{{ 'form' if reason }}" {% if confirm %}data-confirm="{{ confirm }}"{% endif %}>
+  {{ csrf() }}<input type="hidden" name="action" value="{{ action }}">
+  {% if reason %}<input name="reason" required placeholder="{{ _("Reason (shown to the user)") }}" maxlength="500">{% endif %}
+  <button class="btn btn-sm {{ cls }}">{{ icon(ic) }} {{ label }}</button>
+</form>
+{%- endmacro %}
+{% block content %}
+<div class="page-head">
+  <div class="profile-hero">{{ avatar(u, 'xl') }}
+    <div><h1>{{ u.full_name }} {{ verified_tick(u) }}</h1>
+      <p>{{ u.email }} · <span class="tag">{{ u.role }}</span> {{ account_badge(u) }}
+        {% if u.locked_until and u.locked_until > now %}<span class="badge badge-bad">{{ icon('lock') }}{{ _("Locked") }}</span>{% endif %}</p></div></div>
+  {% if u.role == 'candidate' and u.consent_share %}<a class="btn btn-ghost" href="{{ url_for('talent_profile', uid=u.id) }}">{{ icon('eye') }} {{ _("View report") }}</a>{% endif %}
+</div>
+
+{% if u.status == 'pending' %}
+<div class="callout warn">{{ icon('user-check') }}<div style="flex:1"><p><b>{{ _("This") }} {{ u.role }} {{ _("account is waiting for approval.") }}</b> {{ _("Check the organisation") }}{% if u.website %} (<a href="{{ u.website }}" target="_blank" rel="noopener noreferrer">{{ u.website }}</a>){% endif %} {{ _("and contact details before approving.") }}</p>
+  <div class="actions" style="margin-top:10px">{{ act('approve', _("Approve account"), 'btn', 'check') }}</div></div></div>
+{% elif u.status in ('suspended', 'rejected') %}
+<div class="callout bad">{{ icon('alert') }}<p><b>{{ u.status_label }}.</b> {{ u.status_reason }}</p></div>
+{% endif %}
+
+<div class="grid g-side">
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('user') }} {{ _("Profile") }}</h2></div>
+      <div class="panel-body">
+        <dl class="kv">
+          <dt>{{ _("Role") }}</dt><dd>{{ u.role|capitalize }}</dd>
+          {% if u.organisation %}<dt>{{ _("Organisation") }}</dt><dd>{{ u.organisation }}</dd>{% endif %}
+          {% if u.website %}<dt>{{ _("Website") }}</dt><dd><a href="{{ u.website }}" target="_blank" rel="noopener noreferrer">{{ u.website }}</a></dd>{% endif %}
+          {% if u.expertise %}<dt>{{ _("Expertise") }}</dt><dd>{{ u.expertise }}</dd>{% endif %}
+          {% if u.headline %}<dt>{{ _("Headline") }}</dt><dd><span data-tr>{{ u.headline }}</span></dd>{% endif %}
+          <dt>{{ _("Location") }}</dt><dd>{{ u.location or '–' }}</dd>
+          <dt>{{ _("Phone") }}</dt><dd>{{ u.phone or '–' }}</dd>
+          <dt>{{ _("Joined") }}</dt><dd>{{ u.created_at|date('%d %b %Y, %H:%M') }}</dd>
+          <dt>{{ _("Last login") }}</dt><dd>{{ u.last_login_at|date('%d %b %Y, %H:%M') or 'Never' }}</dd>
+          <dt>{{ _("Email") }}</dt><dd>{{ 'Confirmed ' ~ (u.email_verified_at|date) if u.email_verified else 'Not confirmed' }}</dd>
+          <dt>{{ _("Identity") }}</dt><dd>{{ ('Verified by ' ~ (u.verified_by.full_name if u.verified_by else 'admin') ~ ', ' ~ (u.verified_at|date)) if u.identity_verified else 'Not verified' }}</dd>
+          {% if u.role == 'candidate' %}<dt>{{ _("Sharing") }}</dt><dd>{{ ('On since ' ~ (u.consent_at|date)) if u.consent_share else 'Off' }}</dd>
+          <dt>{{ _("Completeness") }}</dt><dd><div class="progress" style="max-width:220px"><i style="width:{{ u.completeness }}%"></i></div> {{ u.completeness }}%</dd>{% endif %}
+        </dl>
+        {% if u.bio %}<p class="small" style="margin:16px 0 0"><span data-tr>{{ u.bio }}</span></p>{% endif %}
+      </div>
+    </section>
+
+    {% if u.role == 'candidate' %}
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('award') }} {{ _("Skills (") }}{{ u.skills|length }})</h2></div>
+      {% if u.skills %}
+      <div class="table-wrap"><table class="table responsive">
+        <thead><tr><th>{{ _("Skill") }}</th><th>{{ _("Status") }}</th><th>{{ _("Evidence") }}</th><th>{{ _("Latest score") }}</th></tr></thead>
+        <tbody>{% for s in u.skills %}<tr><td class="full"><a href="{{ url_for('review', sid=s.id) }}"><b>{{ s.name }}</b></a><br><small class="muted">{{ s.category }}</small></td>
+          <td>{{ badge(s.status) }}</td><td data-label="Evidence">{{ s.evidence|length }}</td>
+          <td>{{ (s.latest_assessment.total ~ '/20') if s.latest_assessment else '–' }}</td></tr>{% endfor %}</tbody>
+      </table></div>
+      {% else %}{{ empty(_("No skills yet"), '', 'award') }}{% endif %}
+    </section>
+    {% endif %}
+
+    {% if assessed %}
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('clipboard') }} {{ _("Recent assessments by") }} {{ u.first_name }}</h2></div>
+      <ul class="list">{% for a in assessed %}<li><span class="grow"><b>{{ a.skill.name }}</b> · {{ a.skill.owner.full_name }}<small>{{ a.created_at|date }} · <code>{{ a.reference }}</code></small></span>
+        <span class="badge badge-{{ a.outcome }}">{{ a.total }}/20</span></li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('activity') }} {{ _("Activity") }}</h2></div>
+      <ul class="timeline" style="padding-top:16px">
+        {% for e in activity %}<li><span class="tl-dot">{{ icon('activity') }}</span><div><b>{{ e.actor.full_name if e.actor else 'Visitor' }}</b> <span class="tag">{{ e.action.replace('_', ' ') }}</span>
+          <small>{{ e.created_at|date('%d %b %Y, %H:%M') }}{% if e.ip %} · {{ e.ip }}{% endif %}{% if e.detail %} · {{ e.detail|truncate(60) }}{% endif %}</small></div></li>
+        {% else %}<li class="muted small">{{ _("No activity.") }}</li>{% endfor %}
+      </ul>
+    </section>
+  </div>
+
+  <aside class="stack" style="align-self:start">
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('shield') }} {{ _("Verification") }}</h2></div>
+      <div class="panel-body stack" style="gap:10px">
+        {% if u.identity_verified %}{{ act('unverify_identity', _("Remove identity verification"), 'btn-ghost', 'x') }}
+        {% else %}{{ act('verify_identity', _("Verify identity"), 'btn', 'shield') }}
+          <p class="tiny muted" style="margin:0">{{ _("Only verify after checking the person's identity through a partner NGO or an in-person or video check.") }}</p>{% endif %}
+        {% if not u.email_verified %}{{ act('verify_email', _("Mark email as confirmed"), 'btn-ghost', 'mail') }}{% endif %}
+      </div>
+    </section>
+    {% if u.role == 'candidate' %}
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('briefcase') }} {{ _('Job access') }}</h2>
+        <span class="badge {{ {'none':'badge-muted','requested':'badge-info','granted':'badge-ok','declined':'badge-warn'}[u.job_access] }}">{{ u.job_access|capitalize }}</span></div>
+      <form method="post" action="{{ url_for('admin_job_access', uid=u.id) }}" class="panel-body form" style="gap:8px">
+        {{ csrf() }}
+        {% if u.job_access_note %}<p class="small muted" style="margin:0">“{{ u.job_access_note }}”</p>{% endif %}
+        <p class="tiny muted" style="margin:0">{{ u.verified_skills|length }} {{ _('verified skills') }} · {{ u.completeness }}% {{ _('profile') }} · {{ _('sharing') }} {{ _('on') if u.consent_share else _('off') }}</p>
+        <input name="note" maxlength="500" placeholder="{{ _('Note to candidate') }}">
+        <div class="actions">
+          {% if u.job_access != 'granted' %}<button class="btn btn-sm" name="decision" value="granted" {{ 'disabled' if not u.verified_skills }}>{{ icon('check') }} {{ _('Grant job access') }}</button>{% endif %}
+          {% if u.job_access == 'requested' %}<button class="btn btn-sm btn-ghost btn-danger" name="decision" value="declined">{{ _('Decline') }}</button>{% endif %}
+          {% if u.job_access == 'granted' %}<button class="btn btn-sm btn-ghost btn-danger" name="decision" value="revoked">{{ _('Revoke access') }}</button>{% endif %}
+        </div>
+      </form>
+    </section>
+    {% endif %}
+    {% if u.id != current_user.id %}
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('settings') }} {{ _("Account controls") }}</h2></div>
+      <div class="panel-body stack" style="gap:12px">
+        <form method="post" action="{{ url_for('admin_user_action', uid=u.id) }}" class="form" style="gap:8px">{{ csrf() }}<input type="hidden" name="action" value="role">
+          <label class="field">{{ _("Role") }}<select name="role">{% for r in roles %}<option {{ 'selected' if r == u.role }}>{{ r }}</option>{% endfor %}</select></label>
+          <button class="btn btn-sm btn-ghost" data-confirm-change>{{ _("Change role") }}</button></form>
+        <hr style="margin:4px 0">
+        {% if u.locked_until and u.locked_until > now %}{{ act('unlock', _("Unlock login"), 'btn-ghost', 'lock') }}{% endif %}
+        {{ act('force_logout', _("Sign out everywhere"), 'btn-ghost', 'logout', confirm=_("Sign this user out of all devices?")) }}
+        {% if u.status == 'pending' %}
+          <details><summary class="link-btn" style="color:var(--bad)">{{ _("Reject application…") }}</summary><div style="margin-top:10px">{{ act('reject', _("Reject"), 'btn-danger', 'x', reason=true) }}</div></details>
+        {% elif u.status == 'active' %}
+          <details><summary class="link-btn" style="color:var(--bad)">{{ _("Suspend account…") }}</summary><div style="margin-top:10px">{{ act('suspend', _("Suspend"), 'btn-danger', 'lock', reason=true) }}</div></details>
+        {% else %}
+          {{ act('reactivate', _("Reactivate account"), 'btn', 'check') }}
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

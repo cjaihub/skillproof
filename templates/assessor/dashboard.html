@@ -1,0 +1,63 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, avatar, kpi, empty, level_dots with context %}
+{% block title %}{{ _("Assessment queue") }}{% endblock %}
+{% block content %}
+<section class="hello">
+  <h1>{{ _("Good to see you") }}, {{ current_user.first_name }}</h1>
+  <p>{% if kpis.queue %}{{ kpis.queue }} {{ _("candidate") }}{{ '' if kpis.queue == 1 else 's' }} {{ 'is' if kpis.queue == 1 else 'are' }} {{ _("waiting for an assessment") }}{% if kpis.overdue %}, {{ kpis.overdue }} {{ _("past the") }} {{ sla }}-{{ _("day target") }}{% endif %}.{% else %}{{ _("The queue is clear. Thank you for keeping assessments moving.") }}{% endif %}</p>
+  {% if pending %}<div class="actions"><a class="btn" href="{{ url_for('review', sid=pending[0].id) }}">{{ icon('clipboard') }} {{ _("Assess the oldest request") }}</a></div>{% endif %}
+</section>
+
+<div class="kpis">
+  {{ kpi(_("In queue"), kpis.queue, 'clipboard', (kpis.overdue ~ _(" overdue")) if kpis.overdue else _("Within target"), tone='warn' if kpis.overdue else '') }}
+  {{ kpi(_("Assessed by you"), kpis.total, 'award', kpis.month ~ _(" this month")) }}
+  {{ kpi(_("Your pass rate"), (kpis.pass_rate ~ '%') if kpis.pass_rate is not none else none, 'check-circle', _("Verified / total"), tone='info') }}
+  {{ kpi(_("Average score"), kpis.avg, 'chart', _("Out of 20"), tone='pink') }}
+</div>
+
+<div class="grid g-main">
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('clock') }} {{ _("Awaiting assessment") }}</h2>
+      <form method="get"><select name="category" data-autosubmit aria-label="{{ _("Filter by category") }}"><option value="">{{ _("All categories") }}</option>{% for c in CATEGORIES %}<option {{ 'selected' if c == cat }}>{{ c }}</option>{% endfor %}</select></form></div>
+    {% if pending %}
+    <div class="table-wrap"><table class="table responsive">
+      <thead><tr><th>{{ _("Candidate") }}</th><th>{{ _("Skill") }}</th><th>{{ _("Evidence") }}</th><th>{{ _("Waiting") }}</th><th></th></tr></thead>
+      <tbody>{% for s in pending %}{% set days = (now - s.requested_at).days if s.requested_at else 0 %}
+        <tr><td class="full"><div class="who">{{ avatar(s.owner, 'sm') }}<div><b>{{ s.owner.full_name }}</b><small>{{ s.owner.headline|truncate(40) }}</small></div></div></td>
+          <td><b>{{ s.name }}</b><br><small class="muted">{{ s.category }} · {{ _("claims") }} {{ LEVELS[s.claimed_level] }}</small></td>
+          <td data-label="Evidence">{{ s.evidence|length }}</td>
+          <td><span class="badge {{ 'badge-bad' if days >= sla else ('badge-warn' if days >= sla // 2 else 'badge-muted') }}">{{ days }}d</span></td>
+          <td class="cell-actions"><a class="btn btn-sm" href="{{ url_for('review', sid=s.id) }}">{{ _("Assess") }}</a></td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+    {% else %}{{ empty(_("Queue is clear"), _("New requests will appear here, and you\\'ll get a notification."), 'check-circle') }}{% endif %}
+  </section>
+
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('chart') }} {{ _("Your decisions · 14 days") }}</h2></div>
+      <div class="panel-body"><div class="chart" style="min-height:180px" data-chart='{{ {"type":"bar","labels":chart.labels,"series":[{"name":"Assessments","values":chart.data}]}|tojson }}'></div></div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('award') }} {{ _("Outcomes") }}</h2></div>
+      <div class="panel-body donut-wrap">
+        <div class="chart" data-chart='{{ {"type":"donut","labels":["Verified","Not yet verified"],"series":[{"values":[outcome.passed, outcome.failed]}],"colors":["--c1","--c2"],"center":"decisions"}|tojson }}'></div>
+        <div class="donut-legend"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-head"><h2>{{ icon('activity') }} {{ _("My recent decisions") }}</h2></div>
+  {% if mine %}
+  <div class="table-wrap"><table class="table responsive">
+    <thead><tr><th>{{ _("Reference") }}</th><th>{{ _("Candidate") }}</th><th>{{ _("Skill") }}</th><th>{{ _("Score") }}</th><th>{{ _("Outcome") }}</th><th>{{ _("Date") }}</th></tr></thead>
+    <tbody>{% for a in mine %}
+      <tr><td><code>{{ a.reference }}</code></td><td>{{ a.skill.owner.full_name }}</td><td><a href="{{ url_for('review', sid=a.skill_id) }}">{{ a.skill.name }}</a></td>
+        <td><b>{{ a.total }}</b>/20</td><td><span class="badge badge-{{ a.outcome }}">{{ a.outcome.replace('_', ' ')|capitalize }}</span></td>
+        <td class="nowrap">{{ a.created_at|date }}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}{{ empty(_("You haven't assessed anything yet"), '', 'award') }}{% endif %}
+</section>
+{% endblock %}

@@ -4,3 +4,5 @@ PyMySQL==1.2.4
 # If MySQL 8 reports "cryptography package is required", also: pip install cryptography
 python-dotenv==1.2.4
 gunicorn==23.0.0
+anthropic>=2.14
+pypdf>=5

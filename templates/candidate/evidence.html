@@ -1,0 +1,41 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, empty with context %}
+{% block title %}{{ _("Evidence") }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ _("My evidence") }}</h1><p>{{ _("Stored privately. Only you, assessors and administrators can open files. Employers only see results.") }}</p></div></div>
+<div class="grid g-side">
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('layers') }} {{ _("Saved evidence (") }}{{ u.evidence|length }})</h2></div>
+    {% for e in u.evidence|sort(attribute='uploaded_at', reverse=true) %}
+      <div class="ev-item"><span class="ev-icon">{{ icon('link' if e.link and not e.stored_name else 'file') }}</span>
+        <div class="grow"><b>{{ e.title }}</b> <span class="tag">{{ _(EVIDENCE_KINDS[e.kind]) }}</span>
+          <p>{{ e.skill.name if e.skill else 'General' }} · {{ e.uploaded_at|date }}
+            {% if e.stored_name %} · <a href="{{ url_for('evidence_file', eid=e.id) }}">{{ e.original_name|truncate(30) }}</a>{% endif %}
+            {% if e.link %} · <a href="{{ e.link }}" target="_blank" rel="noopener noreferrer">{{ e.link|truncate(36) }}</a>{% endif %}</p>
+          {% if e.description %}<p><span data-tr>{{ e.description }}</span></p>{% endif %}</div>
+        <form method="post" action="{{ url_for('evidence_delete', eid=e.id) }}" data-confirm="{{ _("Permanently delete this evidence?") }}">{{ csrf() }}<button class="icon-btn" aria-label="{{ _("Delete") }}">{{ icon('trash') }}</button></form>
+      </div>
+    {% else %}
+      {{ empty(_("Nothing uploaded yet"), _("Photos of your work, code links, references or certificates all help."), 'upload') }}
+    {% endfor %}
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('upload') }} {{ _("Add evidence") }}</h2></div>
+    <form method="post" enctype="multipart/form-data" class="form panel-body">
+      {{ csrf() }}
+      <label class="field">{{ _("Title") }}<input name="title" required maxlength="160" placeholder="{{ _("e.g. GitHub project, photo of installation") }}"></label>
+      <label class="field">{{ _("Type") }}<select name="kind">{% for k, v in EVIDENCE_KINDS.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+      <label class="field">{{ _("Supports skill") }}<select name="skill_id"><option value="">{{ _("General") }}</option>
+        {% for s in u.skills %}<option value="{{ s.id }}" {{ 'selected' if preselect == s.id }}>{{ s.name }}</option>{% endfor %}</select></label>
+      <label class="field">{{ _("File") }} <small class="hint">{{ _("PDF, image, Word, text or zip · max 10 MB") }}</small>
+        <input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.txt,.zip" data-maxmb="10"></label>
+      <div class="divider">{{ _("or") }}</div>
+      <label class="field">{{ _("Link") }}<input type="url" name="link" placeholder="https://"></label>
+      <label class="field">{{ _("Notes for the assessor") }}<textarea name="description" rows="3" placeholder="{{ _("What does this show? Who can confirm it?") }}"></textarea></label>
+      {% if preselect %}<input type="hidden" name="back" value="{{ url_for('skill_detail', sid=preselect) }}">{% endif %}
+      <div class="callout warn">{{ icon('alert') }}<p class="small">{{ _("Don't upload ID documents, passports or refugee registration numbers. They aren't needed.") }}</p></div>
+      <button class="btn btn-block">{{ icon('upload') }} {{ _("Save evidence") }}</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, avatar, empty with context %}
+{% block title %}{{ _('Jobs') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ _('Job posts') }}</h1><p>{{ _('Approve posts from verified employers. Reject anything that looks like a scam, asks for fees or personal documents, or is unclear.') }}</p></div></div>
+<div class="kpis">
+  {% for key, label, ic in [('pending', _('Awaiting approval'), 'clock'), ('open', _('Open'), 'briefcase'), ('closed', _('Closed'), 'lock')] %}
+    <div class="kpi"><div class="kpi-top"><span class="kpi-label">{{ label }}</span><span class="kpi-icon">{{ icon(ic) }}</span></div><div class="kpi-value">{{ counts[key] }}</div></div>
+  {% endfor %}
+  <div class="kpi"><div class="kpi-top"><span class="kpi-label">{{ _('People hired') }}</span><span class="kpi-icon">{{ icon('award') }}</span></div><div class="kpi-value">{{ hires }}</div></div>
+</div>
+<nav class="tabs">
+  <a class="{{ 'on' if not status }}" href="{{ url_for('admin_jobs') }}">{{ _('All') }}</a>
+  {% for k, v in JOB_STATUSES.items() %}<a class="{{ 'on' if status == k }}" href="{{ url_for('admin_jobs', status=k) }}">{{ _(v) }}<em>{{ counts[k] }}</em></a>{% endfor %}
+</nav>
+{% for j in jobs %}
+  <section class="panel">
+    <div class="panel-head"><h2>{{ avatar(j.employer, 'sm') }} <a href="{{ url_for('employer_job', jid=j.id) }}">{{ j.title }}</a></h2>
+      <span class="badge {{ {'pending':'badge-info','open':'badge-ok','rejected':'badge-bad','closed':'badge-muted'}[j.status] }}">{{ _(JOB_STATUSES[j.status]) }}</span></div>
+    <div class="panel-body">
+      <p class="small muted" style="margin-top:0"><a href="{{ url_for('admin_user', uid=j.employer_id) }}">{{ j.employer.organisation or j.employer.full_name }}</a>
+        {% if j.employer.website %} · <a href="{{ j.employer.website }}" target="_blank" rel="noopener noreferrer">{{ j.employer.website }}</a>{% endif %}
+        · {{ j.category }} · {{ _(JOB_TYPES[j.job_type]) }} · {{ j.location }}{% if j.salary %} · {{ j.salary }}{% endif %} · {{ j.created_at|ago }}</p>
+      <p class="pre small"><span data-tr>{{ j.description|truncate(600) }}</span></p>
+      {% if j.skills_list %}<ul class="pills">{% for s in j.skills_list %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+    {% if j.status == 'pending' %}
+    <form method="post" action="{{ url_for('admin_job_review', jid=j.id) }}" class="panel-foot form">
+      {{ csrf() }}
+      <input name="note" maxlength="500" placeholder="{{ _('Note to the employer (required if rejecting)') }}">
+      <div class="actions"><button class="btn" name="decision" value="open">{{ icon('check') }} {{ _('Approve and publish') }}</button>
+        <button class="btn btn-ghost btn-danger" name="decision" value="rejected">{{ icon('x') }} {{ _('Reject') }}</button></div>
+    </form>
+    {% elif j.review_note %}<div class="panel-foot small muted">{{ _('Note') }}: {{ j.review_note }}</div>{% endif %}
+  </section>
+{% else %}
+  <div class="panel">{{ empty(_('No job posts'), '', 'briefcase') }}</div>
+{% endfor %}
+{% endblock %}

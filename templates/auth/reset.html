@@ -1,0 +1,13 @@
+{% extends "layouts/auth.html" %}{% from "_macros.html" import icon, csrf, password_field with context %}
+{% block title %}{{ _('Choose a new password') }}{% endblock %}
+{% block content %}
+<div class="big-icon">{{ icon('shield') }}</div>
+<h1>{{ _('Choose a new password') }}</h1>
+<p class="sub">{{ _("For your security, you'll be signed out on all other devices.") }}</p>
+<form method="post" class="form">
+  {{ csrf() }}
+  {{ password_field('password', _('New password')) }}
+  {{ password_field('confirm', _('Confirm new password'), meter=false, match='password') }}
+  <button class="btn btn-lg btn-block">{{ _('Update password') }}</button>
+</form>
+{% endblock %}

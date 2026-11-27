@@ -1,0 +1,70 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, avatar, empty with context %}
+{% block title %}{{ _('Verifications') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ _('Verification centre') }}</h1><p>{{ _('Grant job access to verified candidates, approve new employer and assessor accounts, and verify identities.') }}</p></div></div>
+
+<section class="panel">
+  <div class="panel-head"><h2>{{ icon('briefcase') }} {{ _('Job access requests') }}</h2><span class="badge badge-warn">{{ job_requests|length }}</span></div>
+  {% if job_requests %}
+  <div class="list">
+    {% for x in job_requests %}
+      <div class="list-row" style="align-items:flex-start;flex-wrap:wrap">
+        {{ avatar(x) }}
+        <div class="grow" style="min-width:220px"><a href="{{ url_for('admin_user', uid=x.id) }}"><b>{{ x.full_name }}</b></a>
+          <small>{{ x.headline|truncate(60) }} · {{ _('requested') }} {{ x.job_access_at|ago }} · {{ x.completeness }}% {{ _('profile') }}
+            {% if x.identity_verified %} · <span style="color:var(--info)">{{ _('identity verified') }}</span>{% endif %}</small>
+          <ul class="pills" style="margin-top:6px">{% for s in x.verified_skills %}<li class="ok">✓ {{ s.name }} · {{ s.latest_assessment.total }}/20</li>{% endfor %}</ul>
+          {% if x.job_access_note %}<p class="small" style="margin:6px 0 0">“{{ x.job_access_note }}”</p>{% endif %}
+        </div>
+        <form method="post" action="{{ url_for('admin_job_access', uid=x.id) }}" class="form" style="min-width:260px;gap:8px">
+          {{ csrf() }}
+          <input name="note" maxlength="500" placeholder="{{ _('Note to candidate (required to decline)') }}">
+          <div class="actions"><button class="btn btn-sm" name="decision" value="granted">{{ icon('check') }} {{ _('Grant job access') }}</button>
+            <button class="btn btn-sm btn-ghost btn-danger" name="decision" value="declined">{{ _('Decline') }}</button></div>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+  {% else %}{{ empty(_('No job access requests'), _('Candidates with verified skills can request access to jobs.'), 'briefcase') }}{% endif %}
+</section>
+
+<section class="panel">
+  <div class="panel-head"><h2>{{ icon('user-check') }} {{ _("Accounts awaiting approval") }}</h2><span class="badge badge-warn">{{ pending|length }}</span></div>
+  {% if pending %}
+  <div class="table-wrap"><table class="table responsive">
+    <thead><tr><th>{{ _("Applicant") }}</th><th>{{ _("Role") }}</th><th>{{ _("Organisation") }}</th><th>{{ _("Email") }}</th><th>{{ _("Applied") }}</th><th></th></tr></thead>
+    <tbody>{% for x in pending %}
+      <tr>
+        <td class="full"><a class="who" href="{{ url_for('admin_user', uid=x.id) }}" style="color:inherit;text-decoration:none">{{ avatar(x, 'sm') }}<div><b>{{ x.full_name }}</b><small>{{ x.email }}</small></div></a></td>
+        <td><span class="tag">{{ x.role }}</span></td>
+        <td>{{ x.organisation or '–' }}{% if x.website %}<br><a class="small" href="{{ x.website }}" target="_blank" rel="noopener noreferrer">{{ x.website|truncate(30) }}</a>{% endif %}{% if x.expertise %}<br><small class="muted">{{ x.expertise }}</small>{% endif %}</td>
+        <td>{% if x.email_verified %}<span class="badge badge-ok">{{ icon('check') }}{{ _("Confirmed") }}</span>{% else %}<span class="badge badge-muted">{{ _("Unconfirmed") }}</span>{% endif %}</td>
+        <td class="nowrap small">{{ x.created_at|ago }}</td>
+        <td class="cell-actions full">
+          <div class="actions" style="justify-content:flex-end">
+            <form method="post" action="{{ url_for('admin_user_action', uid=x.id) }}">{{ csrf() }}<input type="hidden" name="action" value="approve"><input type="hidden" name="next" value="{{ request.path }}"><button class="btn btn-sm">{{ icon('check') }} {{ _("Approve") }}</button></form>
+            <a class="btn btn-sm btn-ghost" href="{{ url_for('admin_user', uid=x.id) }}">{{ _("Review") }}</a>
+          </div></td>
+      </tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}{{ empty(_("No pending applications"), _("New employer and assessor sign-ups will appear here."), 'check-circle') }}{% endif %}
+</section>
+
+<section class="panel">
+  <div class="panel-head"><h2>{{ icon('shield') }} {{ _("Candidates without identity verification") }}</h2><span class="badge badge-muted">{{ identity|length }}</span></div>
+  <div class="panel-body" style="padding-bottom:0"><div class="callout">{{ icon('info') }}<p class="small">{{ _("Identity verification adds a trusted badge to a candidate's report. Only verify after a check through a partner NGO, UNHCR referral, or an in-person or video interview. Never ask candidates to upload ID documents to SkillProof.") }}</p></div></div>
+  {% if identity %}
+  <div class="table-wrap"><table class="table responsive" style="margin-top:10px">
+    <thead><tr><th>{{ _("Candidate") }}</th><th>{{ _("Skills") }}</th><th>{{ _("Evidence") }}</th><th>{{ _("Email") }}</th><th></th></tr></thead>
+    <tbody>{% for x in identity %}
+      <tr><td class="full"><a class="who" href="{{ url_for('admin_user', uid=x.id) }}" style="color:inherit;text-decoration:none">{{ avatar(x, 'sm') }}<div><b>{{ x.full_name }}</b><small>{{ x.headline|truncate(40) or x.email }}</small></div></a></td>
+        <td data-label="Skills">{{ x.skills|length }} ({{ x.verified_skills|length }} {{ _("assessed)") }}</td><td data-label="Evidence">{{ x.evidence|length }}</td>
+        <td>{% if x.email_verified %}<span class="badge badge-ok">{{ _("Confirmed") }}</span>{% else %}<span class="badge badge-muted">{{ _("Unconfirmed") }}</span>{% endif %}</td>
+        <td class="cell-actions"><form method="post" action="{{ url_for('admin_user_action', uid=x.id) }}" data-confirm="Confirm you have verified {{ x.full_name }}'s identity through a trusted check?">{{ csrf() }}<input type="hidden" name="action" value="verify_identity"><input type="hidden" name="next" value="{{ request.path }}">
+          <button class="btn btn-sm btn-soft">{{ icon('shield') }} {{ _("Verify") }}</button></form></td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}{{ empty(_("Everyone is verified"), '', 'shield') }}{% endif %}
+</section>
+{% endblock %}

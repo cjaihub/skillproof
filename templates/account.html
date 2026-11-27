@@ -1,34 +1,87 @@
-{% extends "base.html" %}{% from "_macros.html" import csrf with context %}
-{% block title %}Account &amp; data{% endblock %}
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, avatar, account_badge, password_field, verified_tick with context %}
+{% block title %}{{ _("Account & security") }}{% endblock %}
 {% block content %}
-<h1>Account &amp; my data</h1>
-<div class="grid-2">
-  <section class="card">
-    <h2>Account</h2>
-    <p><b>{{ u.full_name }}</b><br>{{ u.email }}<br><span class="tag">{{ u.role }}</span>{% if u.organisation %} · {{ u.organisation }}{% endif %}</p>
-    <h3>Change password</h3>
-    <form method="post" action="{{ url_for('account_password') }}" class="form">
-      {{ csrf() }}
-      <label>Current password<input type="password" name="current" required autocomplete="current-password"></label>
-      <label>New password<input type="password" name="new" minlength="8" required autocomplete="new-password"></label>
-      <label>Confirm new password<input type="password" name="confirm" minlength="8" required data-match="new" autocomplete="new-password"></label>
-      <button class="btn">Change password</button>
-    </form>
-  </section>
-  <section class="card">
-    <h2>My data rights</h2>
-    <p>Under Kenya's Data Protection Act, 2019 you can access, correct and delete your personal data.</p>
-    <div class="actions">
-      <a class="btn btn-ghost" href="{{ url_for('account_export') }}">⬇ Download all my data (JSON)</a>
-      {% if u.role == 'candidate' %}<a class="btn btn-ghost" href="{{ url_for('my_access_log') }}">See who accessed my data</a>{% endif %}
-    </div>
-    <h3 class="danger-title">Delete my account</h3>
-    <p class="small">This permanently deletes your profile, skills, evidence files and assessment results. It cannot be undone.</p>
-    <form method="post" action="{{ url_for('account_delete') }}" class="form" data-confirm="Permanently delete your account and all data? This cannot be undone.">
-      {{ csrf() }}
-      <label>Confirm with your password<input type="password" name="password" required></label>
-      <button class="btn btn-danger">Delete my account</button>
-    </form>
-  </section>
+<div class="page-head">
+  <div class="profile-hero">{{ avatar(u, 'lg') }}<div><h1>{{ u.full_name }} {{ verified_tick(u) }}</h1>
+    <p>{{ u.email }} · <span class="tag">{{ u.role }}</span> {{ account_badge(u) }}</p></div></div>
+</div>
+
+<div class="grid g-2">
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('user') }} {{ _("Account details") }}</h2></div>
+      <form method="post" action="{{ url_for('account_profile') }}" class="form panel-body">
+        {{ csrf() }}
+        <label class="field">{{ _("Full name") }}<input name="full_name" value="{{ u.full_name }}" required minlength="2"></label>
+        <label class="field">{{ _("Phone") }} <small class="hint">{{ _("(optional, never shared)") }}</small><input name="phone" value="{{ u.phone }}" autocomplete="tel"></label>
+        {% if u.role in ('employer', 'assessor', 'admin') %}
+          <div class="row">
+            <label class="field">{{ _("Organisation") }}<input name="organisation" value="{{ u.organisation }}"></label>
+            <label class="field">{{ _("Website") }}<input type="url" name="website" value="{{ u.website }}" placeholder="https://"></label>
+          </div>
+        {% endif %}
+        {% if u.role == 'assessor' %}<label class="field">{{ _("Areas you can assess") }}<input name="expertise" value="{{ u.expertise }}"></label>{% endif %}
+        {% if u.role == 'candidate' %}<p class="small muted">{{ _("Edit your headline, summary and experience on") }} <a href="{{ url_for('profile') }}">{{ _("your profile") }}</a>.</p>{% endif %}
+        <div><button class="btn">{{ _("Save details") }}</button></div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('lock') }} {{ _("Change password") }}</h2></div>
+      <form method="post" action="{{ url_for('account_password') }}" class="form panel-body">
+        {{ csrf() }}
+        {{ password_field('current', 'Current password', 'current-password', meter=false) }}
+        {{ password_field('new', 'New password') }}
+        {{ password_field('confirm', 'Confirm new password', meter=false, match='new') }}
+        <div><button class="btn">{{ _("Update password") }}</button></div>
+        <p class="tiny muted">{{ _("Changing your password signs you out on all other devices.") }}</p>
+      </form>
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('shield') }} {{ _("Security status") }}</h2></div>
+      <div class="list">
+        <div class="list-row"><span class="grow"><b>{{ _("Email address") }}</b><small>{{ u.email }}</small></span>
+          {% if u.email_verified %}<span class="badge badge-ok">{{ icon('check') }}{{ _("Confirmed") }}</span>
+          {% else %}<form method="post" action="{{ url_for('resend_verification') }}">{{ csrf() }}<button class="btn btn-sm btn-soft">{{ _("Send confirmation") }}</button></form>{% endif %}</div>
+        <div class="list-row"><span class="grow"><b>{{ _("Identity verification") }}</b><small>{{ 'Verified by SkillProof ' ~ (u.verified_at|date) if u.identity_verified else 'Not yet verified by an administrator' }}</small></span>
+          <span class="badge {{ 'badge-ok' if u.identity_verified else 'badge-muted' }}">{{ _('Verified') if u.identity_verified else _('Unverified') }}</span></div>
+        <div class="list-row"><span class="grow"><b>{{ _("Last login") }}</b><small>{{ u.last_login_at|date('%d %b %Y, %H:%M') or 'n/a' }} UTC</small></span></div>
+        <div class="list-row"><span class="grow"><b>{{ _("Member since") }}</b><small>{{ u.created_at|date }}</small></span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('activity') }} {{ _("Recent sign-in activity") }}</h2></div>
+      <ul class="list">
+        {% for l in logins %}
+          <li><span class="tl-dot" style="{{ 'background:var(--bad-bg);color:var(--bad)' if l.action in ('login_failed','account_locked') }}">{{ icon('alert' if l.action in ('login_failed','account_locked') else 'check') }}</span>
+            <span class="grow"><b>{{ l.action.replace('_', ' ')|capitalize }}</b><small>{{ l.created_at|date('%d %b %Y, %H:%M') }} · {{ l.ip or 'unknown IP' }}</small></span></li>
+        {% else %}<li class="muted small">{{ _("No activity recorded yet.") }}</li>{% endfor %}
+      </ul>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('download') }} {{ _("Your data rights") }}</h2></div>
+      <div class="panel-body stack" style="gap:14px">
+        <p class="small muted" style="margin:0">{{ _("Under Kenya's Data Protection Act, 2019 you can access, correct and delete your personal data.") }}</p>
+        <div class="actions">
+          <a class="btn btn-ghost" href="{{ url_for('account_export') }}">{{ icon('download') }} {{ _("Download my data") }}</a>
+          {% if u.role == 'candidate' %}<a class="btn btn-ghost" href="{{ url_for('my_access_log') }}">{{ icon('eye') }} {{ _("Who accessed my data") }}</a>{% endif %}
+        </div>
+        <details>
+          <summary class="link-btn" style="color:var(--bad)">{{ _("Delete my account…") }}</summary>
+          <form method="post" action="{{ url_for('account_delete') }}" class="form" style="margin-top:12px" data-confirm="{{ _("Permanently delete your account and all data? This cannot be undone.") }}">
+            {{ csrf() }}
+            <div class="callout bad">{{ icon('alert') }}<p>{{ _("This permanently deletes your profile, skills, evidence files and results. It cannot be undone.") }}</p></div>
+            {{ password_field('password', 'Confirm with your password', 'current-password', meter=false) }}
+            <div><button class="btn btn-danger">{{ _("Delete my account") }}</button></div>
+          </form>
+        </details>
+      </div>
+    </section>
+  </div>
 </div>
 {% endblock %}

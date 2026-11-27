@@ -1,0 +1,53 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, avatar, empty with context %}
+{% block title %}{{ _("My profile") }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="profile-hero">{{ avatar(u, 'lg') }}<div><h1>{{ u.full_name }}</h1><p>{{ u.headline or 'Add a professional headline' }}{% if u.location %} · {{ u.location }}{% endif %}</p></div></div>
+  <a class="btn btn-ghost" href="{{ url_for('report') }}">{{ icon('eye') }} {{ _("Preview report") }}</a>
+</div>
+
+<div class="grid g-2">
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('user') }} {{ _("About me") }}</h2></div>
+    <form method="post" class="form panel-body">
+      {{ csrf() }}
+      <label class="field">{{ _("Full name") }}<input name="full_name" value="{{ u.full_name }}" required minlength="2"></label>
+      <label class="field">{{ _("Professional headline") }}<input name="headline" maxlength="160" value="{{ u.headline }}" placeholder="{{ _("e.g. Backend developer with 6 years' experience") }}"></label>
+      <label class="field">{{ _("Current location") }}<input name="location" value="{{ u.location }}" placeholder="{{ _("e.g. Kakuma, Kenya") }}"></label>
+      <label class="field">{{ _("Professional summary") }} <small class="hint">{{ _("(80+ characters recommended)") }}</small>
+        <textarea name="bio" rows="7" data-count="2000" maxlength="2000" placeholder="{{ _("Your background, the work you've done and the kind of role you're looking for.") }}"><span data-tr>{{ u.bio }}</span></textarea></label>
+      <div><button class="btn">{{ icon('check') }} {{ _("Save profile") }}</button></div>
+    </form>
+  </section>
+
+  <section class="panel" id="experience">
+    <div class="panel-head"><h2>{{ icon('briefcase') }} {{ _("Work experience") }}</h2><span class="badge badge-muted">{{ _("Self-declared") }}</span></div>
+    {% if u.experiences %}
+    <ul class="timeline" style="padding-top:18px">
+      {% for e in u.experiences %}
+        <li><span class="tl-dot">{{ icon('briefcase') }}</span>
+          <div class="grow" style="flex:1"><b>{{ e.title }}</b>{% if e.organisation %} · {{ e.organisation }}{% endif %}
+            <small>{{ e.country }}{% if e.start_year %} · {{ e.start_year }}–{{ e.end_year or 'present' }}{% endif %}</small>
+            {% if e.description %}<p class="small" style="margin:6px 0 0"><span data-tr>{{ e.description }}</span></p>{% endif %}</div>
+          <form method="post" action="{{ url_for('experience_delete', eid=e.id) }}" data-confirm="{{ _("Remove this experience?") }}">{{ csrf() }}
+            <button class="icon-btn" title="{{ _("Remove") }}" aria-label="{{ _("Remove") }}">{{ icon('trash') }}</button></form></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      {{ empty(_("No experience yet"), _("Include work before displacement, volunteering and informal work."), 'briefcase') }}
+    {% endif %}
+    <details class="panel-foot" {% if not u.experiences %}open{% endif %}>
+      <summary class="link-btn">{{ icon('plus') }} {{ _("Add experience") }}</summary>
+      <form method="post" action="{{ url_for('experience_add') }}" class="form" style="margin-top:14px">
+        {{ csrf() }}
+        <label class="field">{{ _("Job title / role") }}<input name="title" required></label>
+        <div class="row"><label class="field">{{ _("Organisation") }}<input name="organisation"></label><label class="field">{{ _("Country") }}<input name="country"></label></div>
+        <div class="row"><label class="field">{{ _("From (year)") }}<input type="number" name="start_year" min="1950" max="2100" inputmode="numeric"></label>
+          <label class="field">{{ _("To (year)") }} <small class="hint">{{ _("blank = current") }}</small><input type="number" name="end_year" min="1950" max="2100" inputmode="numeric"></label></div>
+        <label class="field">{{ _("What you did") }}<textarea name="description" rows="3"></textarea></label>
+        <div><button class="btn">{{ _("Add experience") }}</button></div>
+      </form>
+    </details>
+  </section>
+</div>
+{% endblock %}

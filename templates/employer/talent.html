@@ -1,0 +1,36 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, avatar, verified_tick, empty with context %}
+{% block title %}{{ _("Find talent") }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ _("Find verified talent") }}</h1><p>{{ _("Only candidates who consented to share are shown. Evidence files always stay private.") }}</p></div></div>
+<div class="grid" style="grid-template-columns:minmax(0,280px) minmax(0,1fr)" id="talent-grid">
+  <form class="panel filters-panel" method="get" style="align-self:start">
+    <div class="panel-head"><h2>{{ icon('filter') }} {{ _("Filters") }}</h2>{% if q or cat or location or level %}<a class="small" href="{{ url_for('talent') }}">{{ _("Clear") }}</a>{% endif %}</div>
+    <div class="panel-body form">
+      <input type="hidden" name="searched" value="1">
+      <label class="field">{{ _("Keyword") }}<span class="search-input">{{ icon('search') }}<input name="q" value="{{ q }}" placeholder="{{ _("Skill or role") }}"></span></label>
+      <label class="field">{{ _("Category") }}<select name="category"><option value="">{{ _("All categories") }}</option>{% for c in CATEGORIES %}<option {{ 'selected' if c == cat }}>{{ c }}</option>{% endfor %}</select></label>
+      <label class="field">{{ _("Location") }}<input name="location" value="{{ location }}" placeholder="{{ _("e.g. Nairobi") }}"></label>
+      <label class="field">{{ _("Minimum level") }}<select name="level"><option value="">{{ _("Any") }}</option>{% for n, name in LEVELS.items() %}<option value="{{ n }}" {{ 'selected' if level == n|string }}>{{ name }}+</option>{% endfor %}</select></label>
+      <label class="check"><input type="checkbox" name="verified" value="1" {{ 'checked' if verified_only }}> {{ _("Independently assessed skills only") }}</label>
+      <button class="btn btn-block">{{ _("Apply filters") }}</button>
+    </div>
+  </form>
+
+  <div class="stack">
+    <div class="actions" style="justify-content:space-between">
+      <span class="muted small"><b style="color:var(--ink)">{{ people|length }}</b> {{ _("candidate") }}{{ '' if people|length == 1 else 's' }} {{ _("found") }}</span>
+      <form method="get" class="actions">{% for k, v in request.args.items() if k != 'sort' %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+        <select name="sort" data-autosubmit aria-label="{{ _("Sort") }}" style="width:auto;min-height:36px;padding-top:6px;padding-bottom:6px">
+          <option value="verified" {{ 'selected' if sort == 'verified' }}>{{ _("Most verified skills") }}</option>
+          <option value="newest" {{ 'selected' if sort == 'newest' }}>{{ _("Newest") }}</option>
+          <option value="name" {{ 'selected' if sort == 'name' }}>{{ _("Name") }}</option></select></form>
+    </div>
+    {% if people %}
+      <div class="grid g-2">{% for p in people %}{% include "employer/_person_card.html" %}{% endfor %}</div>
+    {% else %}
+      <div class="panel">{{ empty(_("No matching candidates"), _("Try a broader keyword, another category, or untick \"assessed skills only\"."), 'search') }}</div>
+    {% endif %}
+  </div>
+</div>
+<style>@media (max-width: 1024px) { #talent-grid { grid-template-columns: 1fr !important; } }</style>
+{% endblock %}

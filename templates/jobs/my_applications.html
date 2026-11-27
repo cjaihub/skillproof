@@ -1,0 +1,25 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, empty with context %}
+{% block title %}{{ _('My applications') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ _('My applications') }}</h1><p>{{ _("Track where you are with each employer. We'll notify you when anything changes.") }}</p></div>
+  <a class="btn" href="{{ url_for('jobs') }}">{{ icon('search') }} {{ _('Browse jobs') }}</a></div>
+{% set steps = ['applied', 'shortlisted', 'interview', 'offered', 'hired'] %}
+{% for a in apps %}
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('briefcase') }} <a href="{{ url_for('job_detail', jid=a.job_id) }}">{{ a.job.title }}</a></h2>
+      <span class="badge {{ 'badge-ok' if a.status in ('offered','hired') else ('badge-muted' if a.status in ('withdrawn','declined') else 'badge-info') }}">{{ _(APPLICATION_STATUSES[a.status]) }}</span></div>
+    <div class="panel-body">
+      <p class="small muted" style="margin-top:0">{{ a.job.employer.organisation }} · {{ a.job.location }} · {{ _('applied') }} {{ a.created_at|ago }} · {{ a.match }}% {{ _('match') }}</p>
+      {% if a.status not in ('withdrawn', 'declined') %}
+      <ol class="pipeline">{% set idx = steps.index(a.status) %}
+        {% for st in steps %}<li class="{{ 'done' if loop.index0 < idx }}{{ ' now' if loop.index0 == idx }}">{{ _(APPLICATION_STATUSES[st]) }}</li>{% endfor %}</ol>
+      {% endif %}
+      {% if a.status not in ('hired', 'withdrawn', 'declined') %}
+        <form method="post" action="{{ url_for('application_withdraw', aid=a.id) }}" data-confirm="{{ _('Withdraw this application?') }}">{{ csrf() }}<button class="link-btn" style="color:var(--muted)">{{ _('Withdraw') }}</button></form>
+      {% endif %}
+    </div>
+  </section>
+{% else %}
+  <div class="panel">{{ empty(_('No applications yet'), _('Find jobs that match your verified skills.'), 'briefcase', _('Browse jobs'), url_for('jobs')) }}</div>
+{% endfor %}
+{% endblock %}

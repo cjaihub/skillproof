@@ -1,0 +1,23 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, badge, level_dots, empty with context %}
+{% block title %}{{ _("Skills") }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>{{ _("My skills") }}</h1><p>{{ _("Self-declared skills become trusted once an independent assessor verifies them.") }}</p></div>
+  <a class="btn" href="{{ url_for('skill_new') }}">{{ icon('plus') }} {{ _("Add a skill") }}</a>
+</div>
+{% set groups = [('verified', 'Independently assessed'), ('pending', 'Awaiting assessment'), ('not_verified', 'Not yet verified'), ('self_declared', 'Self-declared')] %}
+{% if u.skills %}
+<div class="grid g-3">
+  {% for status, title in groups %}{% for s in u.skills if s.status == status %}
+    <a class="card person" href="{{ url_for('skill_detail', sid=s.id) }}">
+      <div class="person-head"><span class="kpi-icon">{{ icon('award' if s.status == 'verified' else 'layers') }}</span><div><b>{{ s.name }}</b><small>{{ s.category }}</small></div></div>
+      <div>{{ badge(s.status) }}</div>
+      <div class="small muted">{{ _("Claimed") }}: {{ level_dots(s.claimed_level) }}{% if s.latest_assessment and s.latest_assessment.assessed_level %}<br>{{ _("Assessed") }}: {{ level_dots(s.latest_assessment.assessed_level) }}{% endif %}</div>
+      <div class="person-foot"><span>{{ s.years }} {{ _("years") }} · {{ s.evidence|length }} {{ _("evidence") }}</span><span>{{ _('Get assessed') if s.status in ('self_declared','not_verified') else _('Open') }} {{ icon('arrow-right') }}</span></div>
+    </a>
+  {% endfor %}{% endfor %}
+</div>
+{% else %}
+<div class="panel">{{ empty(_("No skills yet"), _("Add the skills you have used at work, including informal and volunteer work."), 'award', _("Add your first skill"), url_for('skill_new')) }}</div>
+{% endif %}
+{% endblock %}

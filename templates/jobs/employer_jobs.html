@@ -1,0 +1,22 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, empty with context %}
+{% block title %}{{ _('My jobs') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>{{ _('My job posts') }}</h1><p>{{ _('Every post is checked by an administrator before job-ready candidates can see it.') }}</p></div>
+  <a class="btn" href="{{ url_for('job_edit') }}">{{ icon('plus') }} {{ _('Post a job') }}</a>
+</div>
+<section class="panel">
+  {% if jobs %}
+  <div class="table-wrap"><table class="table responsive">
+    <thead><tr><th>{{ _('Job') }}</th><th>{{ _('Status') }}</th><th>{{ _('Applicants') }}</th><th>{{ _('Posted') }}</th><th></th></tr></thead>
+    <tbody>{% for j in jobs %}{% set active = j.applications|rejectattr('status', 'equalto', 'withdrawn')|list %}
+      <tr><td class="full"><a href="{{ url_for('employer_job', jid=j.id) }}"><b>{{ j.title }}</b></a><br><small class="muted">{{ j.category }} · {{ _(JOB_TYPES[j.job_type]) }} · {{ j.location }}{% if j.remote %} · {{ _('Remote') }}{% endif %}</small></td>
+        <td><span class="badge {{ {'pending':'badge-info','open':'badge-ok','rejected':'badge-bad','closed':'badge-muted'}[j.status] }}">{{ _(JOB_STATUSES[j.status]) }}</span></td>
+        <td data-label="{{ _('Applicants') }}"><b>{{ active|length }}</b>{% set hired = active|selectattr('status', 'equalto', 'hired')|list|length %}{% if hired %} · <span style="color:var(--ok)">{{ hired }} {{ _('hired') }}</span>{% endif %}</td>
+        <td class="small nowrap">{{ j.created_at|date }}</td>
+        <td class="cell-actions"><a class="btn btn-sm btn-ghost" href="{{ url_for('employer_job', jid=j.id) }}">{{ _('Manage') }}</a></td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}{{ empty(_('No job posts yet'), _('Post a job to reach candidates whose skills are independently verified.'), 'briefcase', _('Post a job'), url_for('job_edit')) }}{% endif %}
+</section>
+{% endblock %}

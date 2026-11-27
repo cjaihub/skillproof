@@ -1,0 +1,112 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, badge, level_dots, avatar, verified_tick, empty with context %}
+{% block title %}{{ _("Assess") }} · {{ s.name }}{% endblock %}
+{% block crumbs %}<a href="{{ url_for('review_queue') }}">{{ _("Queue") }}</a>{{ icon('chevron-right') }}<span>{{ s.name }}</span>{% endblock %}
+{% block content %}
+{% set u = s.owner %}
+<div class="page-head">
+  <div class="profile-hero">{{ avatar(u, 'lg') }}<div><h1>{{ s.name }} {{ badge(s.status) }}</h1>
+    <p>{{ u.full_name }} {{ verified_tick(u) }} · <span data-tr>{{ u.headline }}</span> · {{ s.category }} · {{ s.years }} {{ _("years · claims") }} {{ level_dots(s.claimed_level) }}</p></div></div>
+</div>
+
+<div class="grid g-side">
+  <div class="stack">
+    <section class="panel ai-review" id="ai-review">
+      <div class="panel-head"><h2>{{ icon('sparkle') }} {{ _('AI evidence review') }}</h2>
+        {% if s.status == 'pending' %}<form method="post" action="{{ url_for('review_ai', sid=s.id) }}" data-busy="{{ _('Reading the evidence… this can take up to a minute.') }}">{{ csrf() }}
+          <button class="btn btn-sm {{ 'btn-ghost' if ai_review else '' }}" {{ 'disabled' if not ai_on }}>{{ icon('refresh' if ai_review else 'sparkle') }} {{ _('Run again') if ai_review else _('Review with AI') }}</button></form>{% endif %}</div>
+      <div class="panel-body">
+        {% if ai_review %}
+          <div class="callout">{{ icon('info') }}<p class="small">{{ _('Advisory only, generated {when}. Check everything yourself: you make the decision.', when=ai_review_at|ago) }}</p></div>
+          <p style="margin-top:14px">{{ ai_review.overall_summary }}</p>
+          <div class="scores">
+            {% for c in ai_review.criteria %}<div class="meter-row" title="{{ c.rationale }}"><span>{{ c.criterion|capitalize }}</span><span class="meter {{ 'low' if c.suggested_score < 2 }}"><i style="width:{{ c.suggested_score * 20 }}%"></i></span><b>{{ c.suggested_score }}</b></div>{% endfor %}
+          </div>
+          <details><summary class="link-btn">{{ _('Reasons for each score') }}</summary>
+            <ul class="small">{% for c in ai_review.criteria %}<li><b>{{ c.criterion|capitalize }}:</b> {{ c.rationale }}</li>{% endfor %}</ul></details>
+          <div class="grid g-2" style="margin-top:12px;gap:14px">
+            {% if ai_review.strengths %}<div><h3>{{ _('Strengths') }}</h3><ul class="small">{% for x in ai_review.strengths %}<li>{{ x }}</li>{% endfor %}</ul></div>{% endif %}
+            {% if ai_review.concerns %}<div><h3>{{ _('Concerns') }}</h3><ul class="small">{% for x in ai_review.concerns %}<li>{{ x }}</li>{% endfor %}</ul></div>{% endif %}
+          </div>
+          {% if ai_review.authenticity_flags %}<div class="callout warn" style="margin-top:10px">{{ icon('alert') }}<div><b>{{ _('Things to check') }}</b><ul class="small" style="margin:4px 0 0">{% for x in ai_review.authenticity_flags %}<li>{{ x }}</li>{% endfor %}</ul></div></div>{% endif %}
+          {% if ai_review.questions_for_candidate %}<h3>{{ _('Questions you could ask') }}</h3><ul class="small">{% for x in ai_review.questions_for_candidate %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+          {% if s.status == 'pending' %}<button type="button" class="btn btn-sm btn-soft" data-apply-scores='{{ ai_review.criteria|tojson }}'>{{ icon('check') }} {{ _('Copy suggested scores into my form') }}</button>{% endif %}
+        {% elif ai_on %}
+          <p class="muted small" style="margin:0">{{ _('Let AI read the evidence files, test answers and practical task, and suggest scores with reasons. Advisory only.') }}</p>
+        {% else %}
+          <p class="muted small" style="margin:0">{{ _('AI review is switched off on this server (no API key). Assess manually as usual.') }}</p>
+        {% endif %}
+      </div>
+    </section>
+
+    {% if test %}
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('check-circle') }} {{ _('Skills test') }}</h2>
+        <span class="badge {{ 'badge-ok' if test.mcq_score / test.mcq_total >= 0.6 else 'badge-warn' }}">{{ test.mcq_score }}/{{ test.mcq_total }} {{ _('correct') }}</span></div>
+      <div class="panel-body">
+        <details><summary class="link-btn">{{ _('Multiple-choice answers') }} {% if test.source == 'ai' %}({{ _('AI-generated questions') }}){% endif %}</summary>
+          <ol class="small">{% for q in test_q.mcq %}{% set a = test_a.get('q' ~ loop.index0) %}
+            <li>{{ q.question }}<br><span style="color:{{ 'var(--ok)' if a == q.correct_index else 'var(--bad)' }}">{{ '✓' if a == q.correct_index else '✗' }} {{ q.options[a] if a is not none and 0 <= a < q.options|length else '–' }}</span></li>{% endfor %}</ol></details>
+        {% for sq in test_q.short_questions %}<h3>{{ sq }}</h3><p class="pre small"><span data-tr>{{ test_a.get('s' ~ loop.index0, '') }}</span></p>{% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('clipboard') }} {{ _("Practical task") }}</h2>{% if s.requested_at %}<span class="badge badge-muted">{{ _("Submitted") }} {{ s.requested_at|ago }}</span>{% endif %}</div>
+      <div class="panel-body stack" style="gap:14px">
+        <div class="task"><b>{{ icon('info') }} {{ _("Task set") }}</b><p>{{ task }}</p></div>
+        <div><h3>{{ _("Candidate's response") }}</h3><p class="pre" style="margin:0"><span data-tr>{{ s.task_response }}</span></p></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('file') }} {{ _("Evidence (") }}{{ s.evidence|length }})</h2></div>
+      {% for e in s.evidence %}
+        <div class="ev-item"><span class="ev-icon">{{ icon('link' if e.link and not e.stored_name else 'file') }}</span>
+          <div class="grow"><b>{{ e.title }}</b> <span class="tag">{{ _(EVIDENCE_KINDS[e.kind]) }}</span>
+            <p>{% if e.stored_name %}<a href="{{ url_for('evidence_file', eid=e.id) }}">{{ icon('download') }} {{ e.original_name }}</a> {% endif %}
+              {% if e.link %}<a href="{{ e.link }}" target="_blank" rel="noopener noreferrer">{{ icon('link') }} {{ e.link|truncate(50) }}</a>{% endif %}</p>
+            {% if e.description %}<p><span data-tr>{{ e.description }}</span></p>{% endif %}</div></div>
+      {% else %}
+        {{ empty(_("No evidence submitted"), _("Assess on the practical task. Missing documents alone are not a reason to fail: many candidates lost them when displaced."), 'file') }}
+      {% endfor %}
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('user') }} {{ _("Candidate background") }}</h2></div>
+      <div class="panel-body">
+        {% if s.description %}<p class="pre"><span data-tr>{{ s.description }}</span></p>{% endif %}
+        {% for e in u.experiences %}<p class="small"><b>{{ e.title }}</b>{% if e.organisation %}, {{ e.organisation }}{% endif %} · {{ e.country }} {{ e.start_year or '' }}–{{ e.end_year or 'present' }}<br><span data-tr>{{ e.description }}</span></p>
+        {% else %}<p class="muted small">{{ _("No work history provided.") }}</p>{% endfor %}
+      </div>
+    </section>
+    {% if s.assessments %}
+    <section class="panel"><div class="panel-head"><h2>{{ icon('activity') }} {{ _("Previous assessments") }}</h2></div>
+      <ul class="list">{% for a in s.assessments %}<li><span class="grow"><b>{{ a.total }}/20 · {{ a.outcome.replace('_',' ') }}</b> {{ _("by") }} {{ a.assessor.full_name }}, {{ a.created_at|date }}<small><span data-tr>{{ a.comments }}</span></small>
+        {% for ap in a.appeals %}<small><i>{{ _("Appeal (") }}{{ ap.status }}): <span data-tr>{{ ap.reason }}</span></i></small>{% endfor %}</span></li>{% endfor %}</ul>
+    </section>{% endif %}
+  </div>
+
+  <section class="panel sticky" style="align-self:start">
+    <div class="panel-head"><h2>{{ icon('award') }} {{ _("Your assessment") }}</h2></div>
+    {% if s.status == 'pending' %}
+    <form method="post" class="form panel-body" id="score-form" style="gap:4px">
+      {{ csrf() }}
+      {% for k, v in CRITERIA.items() %}
+        <fieldset class="criterion"><legend>{{ v }}</legend>
+          <div class="seg">{% for n in range(0, 6) %}<label><input type="radio" name="score_{{ k }}" value="{{ n }}" required><span>{{ n }}</span></label>{% endfor %}</div>
+        </fieldset>
+      {% endfor %}
+      <div class="score-total" id="score-total" data-pass="{{ PASS_MARK }}" style="margin:14px 0"><span>{{ _("Score every criterion") }}</span><b>0/20</b></div>
+      <div class="form">
+        <label class="field">{{ _("Assessed level (if verified)") }}
+          <select name="assessed_level">{% for n, name in LEVELS.items() %}<option value="{{ n }}" {{ 'selected' if n == s.claimed_level }}>{{ n }} · {{ name }}</option>{% endfor %}</select></label>
+        <label class="field">{{ _("Feedback to the candidate") }} <small class="hint">{{ _("Explain your reasons and what would improve the result.") }}</small>
+          <textarea name="comments" rows="5" minlength="30" required></textarea></label>
+        <label class="check"><input type="checkbox" name="no_conflict" value="1" required> <span>{{ _("I have no personal or financial conflict of interest with this candidate.") }}</span></label>
+        <button class="btn btn-block btn-lg">{{ _("Save assessment") }}</button>
+        <p class="tiny muted" style="margin:0">{{ _("Your name and organisation are recorded on this decision and shown on the candidate's report.") }}</p>
+      </div>
+    </form>
+    {% else %}<div class="panel-body"><p class="muted">{{ _("This skill is no longer awaiting assessment.") }}</p></div>{% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf with context %}
+{% block title %}{{ _('Awaiting approval') }}{% endblock %}
+{% block content %}
+{% set role_word = {'employer': _('employer'), 'assessor': _('assessor'), 'candidate': _('candidate'), 'admin': _('admin')}[u.role] %}
+<div class="card" style="max-width:680px;margin:20px auto;text-align:center;padding:40px 28px">
+  <div class="big-icon warn" style="margin:0 auto 18px">{{ icon('clock') }}</div>
+  <h1>{{ _('Your account is being reviewed') }}</h1>
+  <p class="muted">{{ _('Thanks for registering as: {role}.', role=role_word) }}{% if u.organisation %} ({{ u.organisation }}){% endif %}
+    {{ _("To protect the people on SkillProof, an administrator checks every employer and assessor account before it can be used. This usually takes 1–2 working days, and we'll notify you here and by email.") }}</p>
+  <ul class="steps-list todo" style="max-width:360px;margin:24px auto;text-align:start">
+    <li class="done"><span><i class="tick">{{ icon('check') }}</i>{{ _('Account created') }}</span></li>
+    <li class="{{ 'done' if u.email_verified }}"><span><i class="tick">{% if u.email_verified %}{{ icon('check') }}{% endif %}</i>{{ _('Email confirmed') }}</span></li>
+    <li><span><i class="tick"></i>{{ _('Approved by an administrator') }}</span></li>
+  </ul>
+  <div class="actions" style="justify-content:center">
+    {% if not u.email_verified %}<form method="post" action="{{ url_for('resend_verification') }}">{{ csrf() }}<button class="btn">{{ icon('mail') }} {{ _('Resend confirmation email') }}</button></form>{% endif %}
+    <a class="btn btn-ghost" href="{{ url_for('account') }}">{{ icon('settings') }} {{ _('Account settings') }}</a>
+  </div>
+</div>
+{% endblock %}

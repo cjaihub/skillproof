@@ -1,0 +1,26 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, empty, pagination with context %}
+{% block title %}{{ _("Audit log") }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ _("Audit log") }}</h1><p>{{ _("Accountability record of logins, assessments, role and consent changes, and every view of personal data.") }}</p></div></div>
+<section class="panel">
+  <form class="toolbar" method="get">
+    <span class="search-input grow">{{ icon('search') }}<input name="q" value="{{ q }}" placeholder="{{ _("Search person or detail") }}"></span>
+    <select name="action" aria-label="{{ _("Action") }}"><option value="">{{ _("All actions") }}</option>{% for a in actions %}<option value="{{ a }}" {{ 'selected' if a == action }}>{{ a.replace('_', ' ') }}</option>{% endfor %}</select>
+    <button class="btn btn-ghost">{{ icon('filter') }} {{ _("Filter") }}</button>
+  </form>
+  {% if pager.items %}
+  <div class="table-wrap"><table class="table responsive">
+    <thead><tr><th>{{ _("When (UTC)") }}</th><th>{{ _("Who") }}</th><th>{{ _("Action") }}</th><th>{{ _("Subject") }}</th><th>{{ _("Detail") }}</th><th>IP</th></tr></thead>
+    <tbody>{% for e in pager.items %}
+      <tr><td class="nowrap small">{{ e.created_at|date('%d %b %Y, %H:%M:%S') }}</td>
+        <td>{% if e.actor %}<a href="{{ url_for('admin_user', uid=e.actor.id) }}">{{ e.actor.full_name }}</a><br><small class="muted">{{ e.actor.role }}</small>{% else %}<span class="muted">{{ _("Visitor / system") }}</span>{% endif %}</td>
+        <td><span class="tag">{{ e.action.replace('_', ' ') }}</span></td>
+        <td>{% if e.subject_user_id %}<a href="{{ url_for('admin_user', uid=e.subject_user_id) }}">#{{ e.subject_user_id }}</a>{% endif %}</td>
+        <td class="small muted full">{{ e.detail }}</td>
+        <td class="small muted">{{ e.ip }}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {{ pagination(pager, 'admin_audit') }}
+  {% else %}{{ empty(_("Nothing found"), '', 'activity') }}{% endif %}
+</section>
+{% endblock %}

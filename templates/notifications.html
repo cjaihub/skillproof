@@ -1,0 +1,19 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, empty with context %}
+{% block title %}{{ _("Notifications") }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>{{ _("Notifications") }}</h1><p>{{ _("Updates about your account, assessments and profile.") }}</p></div>
+  {% if unread %}<form method="post" action="{{ url_for('notifications_read') }}">{{ csrf() }}<button class="btn btn-ghost">{{ icon('check') }} {{ _("Mark all as read") }}</button></form>{% endif %}
+</div>
+<div class="panel">
+  {% for n in items %}
+    <a class="list-row {{ 'note unread' if not n.read }}" href="{{ url_for('notification_open', nid=n.id) }}">
+      <span class="tl-dot" style="{{ 'background:var(--ok-bg);color:var(--ok)' if n.kind == 'success' else ('background:var(--warn-bg);color:var(--warn)' if n.kind == 'warning' else 'background:var(--info-bg);color:var(--info)') }}">{{ icon({'success':'check','warning':'alert'}.get(n.kind, 'bell')) }}</span>
+      <span class="grow"><b style="font-weight:{{ 600 if not n.read else 400 }}"><span data-tr>{{ n.message }}</span></b><small class="muted">{{ n.created_at|ago }}</small></span>
+      {{ icon('chevron-right') }}
+    </a>
+  {% else %}
+    {{ empty(_("You're all caught up"), _("We'll let you know when something needs your attention."), 'bell') }}
+  {% endfor %}
+</div>
+{% endblock %}

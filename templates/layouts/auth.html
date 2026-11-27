@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, lang_menu, theme_menu with context %}
+{% block body_class %}auth-page{% endblock %}
+{% block shell %}
+<div class="auth-split">
+  <aside class="auth-aside">
+    <a class="brand brand-light" href="{{ url_for('index') }}"><span class="brand-mark">{{ icon('check') }}</span><span>SkillProof</span></a>
+    <div class="auth-aside-body">
+      {% block aside %}
+      <h2>{{ _('Your skills are real.') }}<br>{{ _("Now they're recognised.") }}</h2>
+      <p>{{ _('Record your experience, submit evidence and get independently assessed. Then share a trusted report with employers.') }}</p>
+      <ul class="auth-points">
+        <li>{{ icon('shield') }} {{ _('Private by default. You decide who sees your profile') }}</li>
+        <li>{{ icon('award') }} {{ _('Assessed against clear, published criteria') }}</li>
+        <li>{{ icon('scale') }} {{ _('Fair: every decision has reasons and can be appealed') }}</li>
+      </ul>
+      {% endblock %}
+    </div>
+    <figure class="auth-quote">
+      <blockquote>“{{ _('I lost every certificate when I fled. SkillProof let me prove what I can do.') }}”</blockquote>
+      <figcaption>{{ _('Example candidate story') }}</figcaption>
+    </figure>
+  </aside>
+  <main id="main" class="auth-main">
+    <div class="auth-top">
+      <a class="muted small" href="{{ url_for('index') }}">{{ icon('arrow-left', 'flip-rtl') }} {{ _('Back to home') }}</a>
+      <div class="actions">{{ lang_menu() }}{{ theme_menu() }}</div>
+    </div>
+    <div class="auth-card">{% block content %}{% endblock %}</div>
+  </main>
+</div>
+{% endblock %}

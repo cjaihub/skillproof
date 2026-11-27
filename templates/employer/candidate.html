@@ -1,0 +1,30 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf with context %}
+{% block title %}{{ u.full_name }}{% endblock %}
+{% block crumbs %}<a href="{{ url_for('talent') }}">{{ _("Talent") }}</a>{{ icon('chevron-right') }}<span>{{ u.full_name }}</span>{% endblock %}
+{% block content %}
+<div class="grid g-side">
+  {% include "_report_sheet.html" %}
+  <aside class="stack no-print" style="align-self:start">
+    {% if current_user.role == 'employer' %}
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('star') }} {{ _("Shortlist") }}</h2>{% if entry %}<span class="badge badge-warn">{{ _("Saved") }}</span>{% endif %}</div>
+      <div class="panel-body stack" style="gap:12px">
+        <form method="post" action="{{ url_for('shortlist_toggle', uid=u.id) }}">{{ csrf() }}<input type="hidden" name="next" value="{{ request.path }}">
+          <button class="btn btn-block {{ 'btn-ghost' if entry }}">{{ icon('star') }} {{ _('Remove from shortlist') if entry else _('Add to shortlist') }}</button></form>
+        {% if entry %}
+        <form method="post" action="{{ url_for('shortlist_toggle', uid=u.id) }}" class="form">{{ csrf() }}
+          <input type="hidden" name="action" value="note"><input type="hidden" name="next" value="{{ request.path }}">
+          <label class="field">{{ _("Private note") }}<textarea name="note" rows="3" maxlength="500" placeholder="{{ _("Only you can see this") }}">{{ entry.note }}</textarea></label>
+          <button class="btn btn-sm btn-ghost">{{ _("Save note") }}</button></form>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+    <section class="card small">
+      <h3>{{ icon('shield') }} {{ _("Contacting candidates") }}</h3>
+      <p class="muted">{{ _("To protect candidates, contact details aren't shown. Use your organisation's recruitment channels via SkillProof partner NGOs, or ask the candidate to share their contact details with you.") }}</p>
+      <button class="btn btn-ghost btn-sm" data-print>{{ icon('printer') }} {{ _("Print report") }}</button>
+    </section>
+  </aside>
+</div>
+{% endblock %}

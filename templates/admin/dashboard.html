@@ -1,0 +1,102 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, avatar, kpi, empty, account_badge with context %}
+{% block title %}{{ _("Platform overview") }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">{{ icon('shield') }} {{ _("Admin console") }}</span><h1>{{ _("Platform overview") }}</h1><p>{{ _("Health, growth and workload across SkillProof") }} · {{ now|date('%A %d %B %Y') }}</p></div>
+  <div class="actions">
+    <a class="btn btn-ghost" href="{{ url_for('admin_users_csv') }}">{{ icon('download') }} {{ _("Export users") }}</a>
+    <a class="btn" href="{{ url_for('admin_verifications') }}">{{ icon('user-check') }} {{ _("Review verifications") }}{% if pending_count %} ({{ pending_count }}){% endif %}</a>
+  </div>
+</div>
+
+{% if pending_count or appeal_count or overdue %}
+<div class="grid g-3">
+  {% if pending_count %}<a class="callout warn" href="{{ url_for('admin_verifications') }}" style="color:inherit;text-decoration:none">{{ icon('user-check') }}<p><b>{{ pending_count }} {{ _("account") }}{{ '' if pending_count == 1 else 's' }}</b> {{ _("waiting for approval") }}</p></a>{% endif %}
+  {% if appeal_count %}<a class="callout" href="{{ url_for('admin_appeals') }}" style="color:inherit;text-decoration:none">{{ icon('scale') }}<p><b>{{ appeal_count }} {{ _("open appeal") }}{{ '' if appeal_count == 1 else 's' }}</b> {{ _("need a decision") }}</p></a>{% endif %}
+  {% if overdue %}<a class="callout bad" href="{{ url_for('admin_assessments') }}" style="color:inherit;text-decoration:none">{{ icon('clock') }}<p><b>{{ overdue }} {{ _("assessment") }}{{ '' if overdue == 1 else 's' }}</b> {{ _("past the") }} {{ sla }}-{{ _("day target") }}</p></a>{% endif %}
+</div>
+{% endif %}
+
+<div class="kpis">
+  {% for k in kpis %}{{ kpi(k.label, k.value, k.icon, k.sub, k.delta, ['', 'info', '', 'pink'][loop.index0]) }}{% endfor %}
+</div>
+
+<div class="grid g-main">
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('chart') }} {{ _("Platform growth · last 30 days") }}</h2></div>
+    <div class="panel-body"><div class="chart" data-chart='{{ {"type":"line","labels":line.labels,"series":line.series}|tojson }}'></div></div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('award') }} {{ _("Skills by status") }}</h2></div>
+    <div class="panel-body donut-wrap">
+      <div class="chart" data-chart='{{ {"type":"donut","labels":["Assessed","Awaiting","Not yet verified","Self-declared"],"series":[{"values":[skill_status.get("verified",0),skill_status.get("pending",0),skill_status.get("not_verified",0),skill_status.get("self_declared",0)]}],"colors":["--c1","--c3","--c2","--line"],"center":"skills"}|tojson }}'></div>
+      <div class="donut-legend"></div>
+    </div>
+    <div class="panel-foot small muted">{{ _("Assessment pass rate") }}: <b style="color:var(--ink)">{{ (pass_rate ~ '%') if pass_rate is not none else '–' }}</b> · {{ _("Queue") }}: <b style="color:var(--ink)">{{ queue }}</b></div>
+  </section>
+</div>
+
+<div class="grid g-2">
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('activity') }} {{ _("Candidate journey") }}</h2><span class="tiny muted">{{ _("Success indicators") }}</span></div>
+    <div class="panel-body funnel">
+      {% set top = funnel[0][1] or 1 %}
+      {% for label, n in funnel %}<div class="funnel-row"><span>{{ label }}</span><span class="funnel-bar"><i style="width:{{ (n / top * 100)|round(1) }}%"></i></span><b>{{ n }}</b></div>{% endfor %}
+    </div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('users') }} {{ _("Active users by role") }}</h2></div>
+    <div class="panel-body donut-wrap">
+      <div class="chart" data-chart='{{ {"type":"donut","labels":["Candidates","Employers","Assessors","Admins"],"series":[{"values":[role_counts.get("candidate",0),role_counts.get("employer",0),role_counts.get("assessor",0),role_counts.get("admin",0)]}],"center":"active"}|tojson }}'></div>
+      <div class="donut-legend"></div>
+    </div>
+  </section>
+</div>
+
+<div class="grid g-3">
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('user-check') }} {{ _("Pending approval") }}</h2><a class="btn btn-sm btn-ghost" href="{{ url_for('admin_verifications') }}">{{ _("All") }}</a></div>
+    {% if pending_users %}
+    <ul class="list">{% for x in pending_users %}
+      <li>{{ avatar(x, 'sm') }}<span class="grow"><a href="{{ url_for('admin_user', uid=x.id) }}"><b>{{ x.full_name }}</b></a><small>{{ x.role|capitalize }} · {{ x.organisation or x.email }} · {{ x.created_at|ago }}</small></span>
+        <form method="post" action="{{ url_for('admin_user_action', uid=x.id) }}">{{ csrf() }}<input type="hidden" name="action" value="approve"><input type="hidden" name="next" value="{{ request.path }}">
+          <button class="btn btn-sm btn-soft" title="{{ _("Approve") }}">{{ icon('check') }}</button></form></li>
+    {% endfor %}</ul>
+    {% else %}{{ empty(_("All caught up"), _("No accounts are waiting."), 'check-circle') }}{% endif %}
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('clipboard') }} {{ _("Assessor workload") }}</h2></div>
+    {% if workload %}
+    <ul class="list">{% for a, n, passed in workload %}
+      <li>{{ avatar(a, 'sm') }}<span class="grow"><a href="{{ url_for('admin_user', uid=a.id) }}"><b>{{ a.full_name }}</b></a><small>{{ a.organisation|truncate(30) }}</small></span>
+        <span class="right"><b>{{ n }}</b><small>{{ ((passed or 0) / n * 100)|round|int ~ '% pass' if n else 'none yet' }}</small></span></li>
+    {% endfor %}</ul>
+    {% else %}{{ empty(_("No assessors yet"), _("Approve assessor applications or promote a user."), 'clipboard') }}{% endif %}
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('layers') }} {{ _("Top skill categories") }}</h2></div>
+    <div class="panel-body">{% if cat_counts %}<div class="chart" data-chart='{{ {"type":"hbar","labels":cat_counts|map(attribute=0)|list,"series":[{"name":"Skills","values":cat_counts|map(attribute=1)|list}]}|tojson }}'></div>{% else %}<p class="muted small">{{ _("No skills yet.") }}</p>{% endif %}</div>
+  </section>
+</div>
+
+<div class="grid g-2">
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('scale') }} {{ _("Open appeals") }}</h2><a class="btn btn-sm btn-ghost" href="{{ url_for('admin_appeals') }}">{{ _("Manage") }}</a></div>
+    {% if open_appeals %}
+    <ul class="list">{% for ap in open_appeals %}
+      <li><span class="tl-dot" style="background:var(--warn-bg);color:var(--warn)">{{ icon('scale') }}</span><span class="grow"><b>{{ ap.user.full_name }}</b> · {{ ap.assessment.skill.name }}<small>{{ ap.reason|truncate(80) }}</small></span><small class="muted nowrap">{{ ap.created_at|ago }}</small></li>
+    {% endfor %}</ul>
+    {% else %}{{ empty(_("No open appeals"), '', 'scale') }}{% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('activity') }} {{ _("Live activity") }}</h2><a class="btn btn-sm btn-ghost" href="{{ url_for('admin_audit') }}">{{ _("Audit log") }}</a></div>
+    <ul class="timeline" style="padding-top:16px">
+      {% for e in activity %}
+        <li><span class="tl-dot">{{ icon('activity') }}</span><div><b>{{ e.actor.full_name if e.actor else 'System / visitor' }}</b> <span class="tag">{{ e.action.replace('_', ' ') }}</span><small>{{ e.created_at|ago }}{% if e.detail %} · {{ e.detail|truncate(50) }}{% endif %}</small></div></li>
+      {% else %}<li class="muted small">{{ _("No activity yet.") }}</li>{% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

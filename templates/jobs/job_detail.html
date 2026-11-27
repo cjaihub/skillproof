@@ -1,0 +1,51 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf with context %}
+{% block title %}{{ job.title }}{% endblock %}
+{% block crumbs %}<a href="{{ url_for('jobs') }}">{{ _('Jobs') }}</a>{{ icon('chevron-right', 'flip-rtl') }}<span>{{ job.title }}</span>{% endblock %}
+{% block content %}
+{% set u = current_user %}
+<div class="grid g-side">
+  <article class="panel">
+    <div class="panel-body">
+      <span class="eyebrow">{{ job.category }}</span>
+      <h1 style="margin-top:4px">{{ job.title }}</h1>
+      <p class="muted">{{ job.employer.organisation }} · {{ job.location }}{% if job.remote %} · {{ _('Remote') }}{% endif %} · {{ _(JOB_TYPES[job.job_type]) }}{% if job.salary %} · {{ job.salary }}{% endif %}</p>
+      <p class="pre"><span data-tr>{{ job.description }}</span></p>
+      {% if job.skills_list %}<h3>{{ _('Required skills') }}</h3>
+        <ul class="pills">{% for s in job.skills_list %}{% set has = s in have %}<li class="{{ 'ok' if has }}">{{ '✓ ' if has }}{{ s }}</li>{% endfor %}</ul>
+        <p class="tiny muted">{{ _('Minimum level') }}: {{ _(LEVELS[job.min_level]) }}</p>{% endif %}
+    </div>
+  </article>
+  <aside class="stack" style="align-self:start">
+    {% if score is not none %}
+    <section class="panel"><div class="panel-body" style="display:flex;gap:18px;align-items:center">
+      <div class="ring" style="--p: {{ score }}; --size: 96px"><b>{{ score }}%</b></div>
+      <p class="small muted" style="margin:0">{{ _('Skills match based on your independently assessed skills (full weight) and self-declared skills (part weight).') }}</p>
+    </div></section>
+    {% endif %}
+    {% if u.role == 'candidate' %}
+    <section class="panel">
+      <div class="panel-head"><h2>{{ icon('send') }} {{ _('Apply') }}</h2></div>
+      <div class="panel-body">
+        {% if existing and existing.status != 'withdrawn' %}
+          <div class="callout ok">{{ icon('check-circle') }}<p>{{ _('You applied {when}. Status:', when=existing.created_at|ago) }} <b>{{ _(APPLICATION_STATUSES[existing.status]) }}</b></p></div>
+          <a class="btn btn-ghost btn-block" style="margin-top:10px" href="{{ url_for('my_applications') }}">{{ _('My applications') }}</a>
+        {% elif u.job_access != 'granted' %}
+          <p class="small">{{ _('Applying needs job access, granted by an administrator once your skills are verified.') }}</p>
+          <a class="btn btn-block" href="{{ url_for('job_access') }}">{{ _('Get job-ready') }}</a>
+        {% else %}
+          <form method="post" class="form">
+            {{ csrf() }}
+            <label class="field">{{ _('Short message to the employer') }} <small class="hint">({{ _('optional') }})</small>
+              <textarea name="cover_note" rows="5" maxlength="2000" placeholder="{{ _('Why you are a good fit and when you can start') }}"></textarea></label>
+            {% if not u.consent_share %}<div class="callout warn">{{ icon('alert') }}<p class="small">{{ _('Turn on report sharing first, so the employer can see your verified skills.') }} <a href="{{ url_for('report') }}">{{ _('Competency report') }}</a></p></div>{% endif %}
+            <button class="btn btn-block btn-lg" {{ 'disabled' if not u.consent_share }}>{{ _('Send application') }}</button>
+            <p class="tiny muted" style="margin:0">{{ _('The employer will see your competency report: verified skills, work history and summary. Never your files, email or phone.') }}</p>
+          </form>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+    <div class="callout">{{ icon('shield') }}<p class="small">{{ _('Real employers never ask for money, ID numbers or bank details to apply. Report anything suspicious to SkillProof.') }}</p></div>
+  </aside>
+</div>
+{% endblock %}

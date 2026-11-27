@@ -1,0 +1,34 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, empty with context %}
+{% block title %}{{ _('Jobs') }}{% endblock %}
+{% block content %}
+{% set u = current_user %}
+<div class="page-head">
+  <div><h1>{{ _('Jobs for you') }}</h1><p>{{ _('Openings from verified employers, sorted by how well your skills match.') }}</p></div>
+  {% if u.role == 'candidate' %}<a class="btn btn-ghost" href="{{ url_for('my_applications') }}">{{ icon('clipboard') }} {{ _('My applications') }}</a>{% endif %}
+</div>
+{% if u.role == 'candidate' and u.job_access != 'granted' %}
+  <div class="callout warn">{{ icon('lock') }}<div style="flex:1"><p><b>{{ _('You can look, but not apply yet.') }}</b> {{ _('Get at least one skill verified, then request job access from an administrator.') }}</p>
+    <a class="btn btn-sm" style="margin-top:8px" href="{{ url_for('job_access') }}">{{ _('Get job-ready') }} {{ icon('arrow-right', 'flip-rtl') }}</a></div></div>
+{% endif %}
+<form class="panel toolbar" method="get">
+  <span class="search-input grow">{{ icon('search') }}<input name="q" value="{{ q }}" placeholder="{{ _('Job title, skill or place') }}"></span>
+  <select name="category" aria-label="{{ _('Category') }}"><option value="">{{ _('All categories') }}</option>{% for c in CATEGORIES %}<option {{ 'selected' if c == cat }}>{{ c }}</option>{% endfor %}</select>
+  <select name="type" aria-label="{{ _('Type') }}"><option value="">{{ _('All types') }}</option>{% for k, v in JOB_TYPES.items() %}<option value="{{ k }}" {{ 'selected' if k == jtype }}>{{ _(v) }}</option>{% endfor %}</select>
+  <button class="btn">{{ icon('filter') }} {{ _('Search') }}</button>
+</form>
+{% if scored %}
+<div class="grid g-2">
+  {% for j, m in scored %}{% set a = applied.get(j.id) %}
+    <a class="card person job-card" href="{{ url_for('job_detail', jid=j.id) }}">
+      <div class="person-head" style="justify-content:space-between">
+        <div><b>{{ j.title }}</b><small>{{ j.employer.organisation }} · {{ j.location }}{% if j.remote %} · {{ _('Remote') }}{% endif %}</small></div>
+        {% if m is not none %}<span class="match {{ 'hi' if m >= 70 else ('mid' if m >= 40 else 'lo') }}" title="{{ _('Skills match') }}">{{ m }}%</span>{% endif %}
+      </div>
+      <ul class="pills">{% for s in j.skills_list[:5] %}<li>{{ s }}</li>{% endfor %}</ul>
+      <div class="person-foot"><span>{{ _(JOB_TYPES[j.job_type]) }}{% if j.salary %} · {{ j.salary }}{% endif %}</span>
+        {% if a and a.status != 'withdrawn' %}<span class="badge badge-ok">{{ _(APPLICATION_STATUSES[a.status]) }}</span>{% else %}<span>{{ j.approved_at|ago }}</span>{% endif %}</div>
+    </a>
+  {% endfor %}
+</div>
+{% else %}<div class="panel">{{ empty(_('No open jobs found'), _('Try a broader search. New jobs are announced in your notifications.'), 'briefcase') }}</div>{% endif %}
+{% endblock %}

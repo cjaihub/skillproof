@@ -1,0 +1,37 @@
+{% from "_macros.html" import icon with context %}
+{% set u = current_user %}
+{% if u and u.role == 'candidate' %}
+  {% set chips = [_('What should I do next?'), _("I lost my certificates. What can I upload?"), _('How does the assessment work?'), _('How do I share my report with employers?')] %}
+{% elif u and u.role == 'employer' %}
+  {% set chips = [_('How do I find verified candidates?'), _('What do assessment scores mean?'), _('How do I shortlist someone?')] %}
+{% elif u and u.role in ('assessor', 'admin') %}
+  {% set chips = [_('How does the assessment work?'), _('How do appeals work?'), _('Is candidate data private?')] %}
+{% else %}
+  {% set chips = [_('How do I get started?'), _("I lost my certificates. What can I upload?"), _('Is my information safe?'), _("I'm an employer. How does it work?")] %}
+{% endif %}
+<div class="ai" id="ai" data-endpoint="{{ url_for('assistant_chat') }}" data-csrf="{{ csrf_token }}" data-lang="{{ LANG }}"
+     data-i18n='{{ {"error": _("Sorry, something went wrong. Please try again."), "ai": _("AI assistant"), "guide": _("Guide mode"), "reset": _("Start a new conversation?")}|tojson }}'>
+  <button type="button" class="ai-fab" data-ai-open aria-haspopup="dialog" aria-controls="ai-panel">
+    {{ icon('sparkle') }}<span class="ai-label">{{ _('Need help?') }}</span>{% if u and u.role == 'candidate' and u.completeness < 100 %}<i class="ai-ping" aria-hidden="true"></i>{% endif %}
+  </button>
+  <section class="ai-panel" id="ai-panel" role="dialog" aria-modal="false" aria-labelledby="ai-title">
+    <header class="ai-head">
+      <span class="ai-avatar">{{ icon('sparkle') }}</span>
+      <div class="grow"><b id="ai-title">{{ _('SkillProof Assistant') }}</b>
+        <small><i></i><span data-ai-mode>{{ _('Here to help you get started') }}</span></small></div>
+      <button type="button" class="icon-btn" data-ai-reset title="{{ _('New conversation') }}" aria-label="{{ _('New conversation') }}">{{ icon('refresh') }}</button>
+      <button type="button" class="icon-btn" data-ai-close title="{{ _('Close') }}" aria-label="{{ _('Close') }}">{{ icon('x') }}</button>
+    </header>
+    <div class="ai-body" data-ai-body aria-live="polite">
+      <div class="ai-msg bot" data-ai-welcome>{% if u %}{{ _('Hi {name}! I can guide you through SkillProof step by step, in your language. What would you like to do?', name=u.first_name) }}{% else %}{{ _("Hi! I'm here to help you get started with SkillProof, in your language. Ask me anything about creating an account, adding your skills or getting assessed.") }}{% endif %}</div>
+    </div>
+    <div class="ai-chips" data-ai-chips>
+      {% for c in chips %}<button type="button" data-ai-chip>{{ c }}</button>{% endfor %}
+    </div>
+    <form class="ai-form" data-ai-form>
+      <textarea name="q" rows="1" maxlength="1500" required placeholder="{{ _('Type your question…') }}" aria-label="{{ _('Your question') }}"></textarea>
+      <button class="btn" aria-label="{{ _('Send') }}">{{ icon('send') }}</button>
+    </form>
+    <p class="ai-foot">{{ _("Answers may contain mistakes. Never share passwords or ID numbers.") }}</p>
+  </section>
+</div>

@@ -1,0 +1,53 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, avatar, verified_tick, empty with context %}
+{% block title %}{{ job.title }}{% endblock %}
+{% block crumbs %}{% if current_user.role == 'employer' %}<a href="{{ url_for('employer_jobs') }}">{{ _('My jobs') }}</a>{% else %}<a href="{{ url_for('admin_jobs') }}">{{ _('Jobs') }}</a>{% endif %}{{ icon('chevron-right', 'flip-rtl') }}<span>{{ job.title }}</span>{% endblock %}
+{% block content %}
+{% set all_apps = job.applications|rejectattr('status', 'equalto', 'withdrawn')|list %}
+<div class="page-head">
+  <div><h1>{{ job.title }} <span class="badge {{ {'pending':'badge-info','open':'badge-ok','rejected':'badge-bad','closed':'badge-muted'}[job.status] }}">{{ _(JOB_STATUSES[job.status]) }}</span></h1>
+    <p>{{ job.category }} · {{ _(JOB_TYPES[job.job_type]) }} · {{ job.location }}{% if job.remote %} · {{ _('Remote') }}{% endif %}{% if job.salary %} · {{ job.salary }}{% endif %}</p></div>
+  {% if current_user.role == 'employer' %}
+  <div class="actions">
+    <a class="btn btn-ghost" href="{{ url_for('job_edit', jid=job.id) }}">{{ icon('edit') }} {{ _('Edit') }}</a>
+    <form method="post" action="{{ url_for('job_close', jid=job.id) }}">{{ csrf() }}<button class="btn btn-ghost">{{ icon('lock' if job.status != 'closed' else 'refresh') }} {{ _('Close job') if job.status != 'closed' else _('Reopen') }}</button></form>
+  </div>{% endif %}
+</div>
+{% if job.status == 'rejected' and job.review_note %}<div class="callout bad">{{ icon('alert') }}<p><b>{{ _('Not approved') }}:</b> {{ job.review_note }} {{ _('Edit the post to resubmit it.') }}</p></div>
+{% elif job.status == 'pending' %}<div class="callout">{{ icon('clock') }}<p>{{ _('Waiting for an administrator to approve this post.') }}</p></div>{% endif %}
+
+<nav class="tabs" aria-label="{{ _('Filter applicants') }}">
+  <a class="{{ 'on' if not status }}" href="{{ url_for('employer_job', jid=job.id) }}">{{ _('All') }}<em>{{ all_apps|length }}</em></a>
+  {% for st in flow %}<a class="{{ 'on' if status == st }}" href="{{ url_for('employer_job', jid=job.id, status=st) }}">{{ _(APPLICATION_STATUSES[st]) }}<em>{{ all_apps|selectattr('status', 'equalto', st)|list|length }}</em></a>{% endfor %}
+</nav>
+
+<section class="panel">
+  <div class="panel-head"><h2>{{ icon('users') }} {{ _('Applicants') }}</h2><span class="tiny muted">{{ _('Sorted by skills match') }}</span></div>
+  {% if apps %}
+  <div class="list">
+    {% for a in apps %}{% set c = a.candidate %}
+      <div class="list-row applicant">
+        {{ avatar(c) }}
+        <div class="grow"><a href="{{ url_for('talent_profile', uid=c.id) }}"><b>{{ c.full_name }}</b></a> {{ verified_tick(c) }}
+          <small>{{ c.headline|truncate(70) }} · {{ _('applied') }} {{ a.created_at|ago }}</small>
+          <ul class="pills" style="margin-top:6px">{% for s in c.skills if s.status == 'verified' %}<li class="ok">✓ {{ s.name }}</li>{% endfor %}</ul>
+          {% if a.cover_note %}<p class="small" style="margin:8px 0 0">“<span data-tr>{{ a.cover_note|truncate(280) }}</span>”</p>{% endif %}
+        </div>
+        <div class="applicant-side">
+          <span class="match {{ 'hi' if a.match >= 70 else ('mid' if a.match >= 40 else 'lo') }}">{{ a.match }}%</span>
+          {% if current_user.role == 'employer' %}
+          <form method="post" action="{{ url_for('application_status', aid=a.id) }}">{{ csrf() }}<input type="hidden" name="next" value="{{ request.full_path }}">
+            <select name="status" data-autosubmit aria-label="{{ _('Application status') }}">{% for st in flow %}<option value="{{ st }}" {{ 'selected' if a.status == st }}>{{ _(APPLICATION_STATUSES[st]) }}</option>{% endfor %}</select></form>
+          {% else %}<span class="badge badge-info">{{ _(APPLICATION_STATUSES[a.status]) }}</span>{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% else %}{{ empty(_('No applicants yet'), _('Job-ready candidates whose skills match will be notified when the post is approved.'), 'users') }}{% endif %}
+</section>
+
+<section class="panel">
+  <div class="panel-head"><h2>{{ icon('file') }} {{ _('Job description') }}</h2></div>
+  <div class="panel-body"><p class="pre"><span data-tr>{{ job.description }}</span></p>
+    {% if job.skills_list %}<h3>{{ _('Required skills') }}</h3><ul class="pills">{% for s in job.skills_list %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}</div>
+</section>
+{% endblock %}

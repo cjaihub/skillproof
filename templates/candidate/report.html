@@ -1,0 +1,56 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf with context %}
+{% block title %}{{ _('Competency report') }}{% endblock %}
+{% block content %}
+{% set areas = u.competence_areas() %}
+{% set focus = request.args.get('area') if request.args.get('area') in areas|map(attribute='category')|list else none %}
+{% set base_link = url_for('public_profile', token=u.share_token, _external=True) %}
+<div class="page-head no-print">
+  <div><span class="eyebrow">{{ icon('award') }} {{ _('Your verified record') }}</span><h1>{{ _('Competency report') }}</h1>
+    <p>{{ _('This is exactly what verified employers and people with your link will see.') }}</p></div>
+  <div class="actions"><button class="btn btn-ghost" data-print>{{ icon('printer') }} {{ _('Print / save PDF') }}</button></div>
+</div>
+
+<section class="share-x no-print {{ 'on' if u.consent_share }}">
+  <div class="share-x-main">
+    <div class="share-x-head">
+      <span class="share-x-icon">{{ icon('share' if u.consent_share else 'lock') }}</span>
+      <div><h2>{{ _('Sharing is on') if u.consent_share else _('Your report is private') }}</h2>
+        <p>{% if u.consent_share %}{{ _('Since {date}. Verified employers can find you, and anyone with a link can view it.', date=u.consent_at|date) }}{% else %}{{ _('Only you can see it. Turn on sharing when you are ready to be found by verified employers.') }}{% endif %}</p></div>
+    </div>
+    {% if u.consent_share %}
+      <label class="field">{{ _('Link to share') }}
+        <div class="copy-row"><select id="share-area" aria-label="{{ _('Which competence to share') }}">
+            <option value="">{{ _('Full report (all competences)') }}</option>
+            {% for a in areas %}<option value="{{ a.category }}" {{ 'selected' if a.category == focus }}>{{ a.category }}</option>{% endfor %}</select>
+          <input readonly id="share-url" value="{{ base_link }}{{ ('?area=' ~ focus|urlencode) if focus }}" data-base="{{ base_link }}">
+          <button type="button" class="btn" data-copy="#share-url">{{ icon('copy') }} {{ _('Copy') }}</button></div></label>
+      <div class="actions">
+        <form method="post" action="{{ url_for('consent') }}">{{ csrf() }}<input type="hidden" name="share" value="0"><button class="btn btn-ghost btn-sm">{{ icon('lock') }} {{ _('Stop sharing') }}</button></form>
+        <form method="post" action="{{ url_for('consent') }}" data-confirm="{{ _('Create a new link? The old link will stop working.') }}">{{ csrf() }}<input type="hidden" name="share" value="1"><input type="hidden" name="rotate" value="1"><button class="btn btn-ghost btn-sm">{{ icon('refresh') }} {{ _('New link') }}</button></form>
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('my_access_log') }}">{{ icon('eye') }} {{ _('Who viewed my profile?') }}</a>
+      </div>
+    {% else %}
+      <form method="post" action="{{ url_for('consent') }}" class="form">
+        {{ csrf() }}<input type="hidden" name="share" value="1">
+        <label class="check consent-box"><input type="checkbox" required> <span>{{ _('I consent to SkillProof showing the information listed under “Shown” to verified employers and anyone I give my link to. I can withdraw this at any time.') }}</span></label>
+        <div><button class="btn btn-lg">{{ icon('share') }} {{ _('Turn on sharing') }}</button></div>
+      </form>
+    {% endif %}
+  </div>
+  <div class="share-x-side">
+    <div><b class="ok">{{ icon('check-circle') }} {{ _('Shown') }}</b>
+      <ul><li>{{ _('Name, headline and location') }}</li><li>{{ _('Summary and work history') }}</li><li>{{ _('Skills and assessment results') }}</li></ul></div>
+    <div><b class="no">{{ icon('lock') }} {{ _('Never shown') }}</b>
+      <ul><li>{{ _('Evidence files') }}</li><li>{{ _('Email and phone') }}</li><li>{{ _('Test answers') }}</li></ul></div>
+  </div>
+</section>
+
+{% if areas|length > 1 %}
+<nav class="tabs no-print" aria-label="{{ _('Competences') }}">
+  <a class="{{ 'on' if not focus }}" href="{{ url_for('report') }}">{{ _('All competences') }}<em>{{ areas|length }}</em></a>
+  {% for a in areas %}<a class="{{ 'on' if focus == a.category }}" href="{{ url_for('report', area=a.category) }}">{{ a.category }}<em>{{ a.verified|length }}✓</em></a>{% endfor %}
+</nav>
+{% endif %}
+
+{% include "_report_sheet.html" %}
+{% endblock %}

@@ -1,9 +1,16 @@
-{% extends "base.html" %}
+{% extends "layouts/public.html" %}
+{% from "_macros.html" import icon with context %}
 {% block title %}{{ code }}{% endblock %}
 {% block content %}
-<div class="card center narrow">
-  <h1>{{ code }}</h1>
-  <p>{{ message }}</p>
-  <a class="btn" href="{{ url_for('index') }}">Back to home</a>
+<div class="wrap">
+  <div class="card center" style="max-width:520px;margin:60px auto;padding:44px 28px">
+    <div class="big-icon {{ 'warn' if code != 404 }}" style="margin:0 auto 18px">{{ icon('alert' if code != 404 else 'search') }}</div>
+    <span class="eyebrow">{{ _("Error") }} {{ code }}</span>
+    <h1>{{ {404: "Page not found", 403: "Access denied", 400: "Something went wrong"}.get(code, "Error") }}</h1>
+    <p class="muted">{{ message }}</p>
+    <div class="actions" style="justify-content:center">
+      <a class="btn" href="{{ url_for('dashboard') if current_user else url_for('index') }}">{{ _('Back to dashboard') if current_user else _('Back to home') }}</a>
+    </div>
+  </div>
 </div>
 {% endblock %}

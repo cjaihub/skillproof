@@ -1,0 +1,89 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf, level_dots, empty with context %}
+{% block title %}{{ _('Review suggestions') }}{% endblock %}
+{% block crumbs %}<a href="{{ url_for('import_docs') }}">{{ _('Import with AI') }}</a>{{ icon('chevron-right', 'flip-rtl') }}<span>{{ imp.original_name|truncate(30) }}</span>{% endblock %}
+{% block content %}
+{% set is_id = r.document_type == 'id_document' %}
+<div class="page-head">
+  <div><span class="eyebrow">{{ icon('sparkle') }} {{ _('AI suggestions') if imp.mode == 'ai' else _('Basic suggestions') }}</span>
+    <h1>{{ _('Review and choose what to keep') }}</h1>
+    <p>{{ r.summary }}</p></div>
+</div>
+
+{% for w in r.warnings %}<div class="callout warn">{{ icon('alert') }}<p>{{ w }}</p></div>{% endfor %}
+{% if is_id %}<div class="callout bad">{{ icon('shield') }}<p><b>{{ _('This looks like an identity document.') }}</b> {{ _("It won't be saved. Please discard it and upload a CV, certificate or work sample instead.") }}</p></div>{% endif %}
+
+{% if imp.status != 'ready' %}
+  <div class="callout">{{ icon('info') }}<p>{{ _('These suggestions were already used.') }} <a href="{{ url_for('import_docs') }}">{{ _('Import another document') }}</a></p></div>
+{% else %}
+<form method="post" action="{{ url_for('import_apply', iid=imp.id) }}" class="stack" data-bulk-check>
+  {{ csrf() }}
+  {% if r.headline or r.location or r.bio or r.corrections %}
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('user') }} {{ _('Profile details') }}</h2></div>
+    <div class="list">
+      {% for field, label in [('headline', _('Headline')), ('location', _('Location')), ('bio', _('Summary'))] if r[field] %}
+        <label class="list-row suggest">
+          <input type="checkbox" name="use_{{ field }}" value="1" {{ 'checked' if not u[field] }}>
+          <span class="grow"><b>{{ label }}</b>
+            {% if u[field] %}<small class="muted">{{ _('Current') }}: {{ u[field]|truncate(140) }}</small>{% endif %}
+            <span class="sugg">{{ r[field] }}</span></span>
+        </label>
+      {% endfor %}
+      {% for c in r.corrections %}
+        <label class="list-row suggest">
+          <input type="checkbox" name="corr_{{ loop.index0 }}" value="1" {{ 'disabled' if c.field not in ('headline','location','bio') else 'checked' }}>
+          <span class="grow"><b>{{ icon('edit') }} {{ _('Correction') }}: {{ c.field }}</b>
+            <small class="muted"><s>{{ c.current_value|truncate(120) }}</s></small>
+            <span class="sugg">{{ c.suggested_value }}</span>
+            <small class="muted">{{ c.reason }}{% if c.field not in ('headline','location','bio') %} · {{ _('Fix this one yourself on your profile.') }}{% endif %}</small></span>
+        </label>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('award') }} {{ _('Skills found') }} ({{ r.skills|length }})</h2><button type="button" class="link-btn" data-check-all="skill_">{{ _('Select all') }}</button></div>
+    {% if r.skills %}
+    <div class="list">
+      {% for s in r.skills %}{% set dup = s.name|lower in existing %}
+        <label class="list-row suggest {{ 'dup' if dup }}">
+          <input type="checkbox" name="skill_{{ loop.index0 }}" value="1" {{ 'disabled' if dup else 'checked' }}>
+          <span class="grow"><b>{{ s.name }}</b> <span class="tag">{{ s.category }}</span>
+            <small class="muted">{{ level_dots(s.level) }} · {{ s.years }} {{ _('years') }}{% if dup %} · {{ _('already on your profile') }}{% endif %}</small>
+            {% if s.evidence_note %}<small class="muted">{{ icon('file') }} {{ s.evidence_note }}</small>{% endif %}</span>
+        </label>
+      {% endfor %}
+    </div>
+    {% else %}{{ empty(_('No skills found'), _('Try a CV or a document that describes your work.'), 'award') }}{% endif %}
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('briefcase') }} {{ _('Work history found') }} ({{ r.experiences|length }})</h2></div>
+    {% if r.experiences %}
+    <div class="list">
+      {% for e in r.experiences %}
+        <label class="list-row suggest">
+          <input type="checkbox" name="exp_{{ loop.index0 }}" value="1" checked>
+          <span class="grow"><b>{{ e.title }}</b>{% if e.organisation %} · {{ e.organisation }}{% endif %}
+            <small class="muted">{{ e.country }} {% if e.start_year %}{{ e.start_year }}–{{ e.end_year or _('present') }}{% endif %}</small>
+            {% if e.description %}<small class="muted">{{ e.description|truncate(160) }}</small>{% endif %}</span>
+        </label>
+      {% endfor %}
+    </div>
+    {% else %}<div class="panel-body muted small">{{ _('No work history found in this document.') }}</div>{% endif %}
+  </section>
+
+  <section class="panel">
+    <div class="panel-body actions" style="justify-content:space-between">
+      <label class="check"><input type="checkbox" name="save_evidence" value="1" {{ 'checked' if not is_id else 'disabled' }}> {{ _('Also save this file as private evidence for assessors') }}</label>
+      <div class="actions">
+        <button class="btn" {{ 'disabled' if is_id }}>{{ icon('check') }} {{ _('Add selected to my profile') }}</button>
+        <button class="btn btn-ghost" form="discard-form">{{ _('Discard') }}</button>
+      </div>
+    </div>
+  </section>
+</form>
+<form id="discard-form" method="post" action="{{ url_for('import_discard', iid=imp.id) }}" data-confirm="{{ _('Discard these suggestions and delete the file?') }}">{{ csrf() }}</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "layouts/app.html" %}{% from "_macros.html" import icon, csrf with context %}
+{% block title %}{{ _('Job access') }}{% endblock %}
+{% block content %}
+{% set ready = checks|selectattr(1)|list|length == checks|length %}
+<div class="page-head">
+  <div><span class="eyebrow">{{ icon('briefcase') }} {{ _('Get job-ready') }}</span><h1>{{ _('Request access to jobs') }}</h1>
+    <p>{{ _('Once your skills are verified, an administrator checks your profile and grants access to job openings from verified employers.') }}</p></div>
+</div>
+<div class="grid g-2">
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('shield') }} {{ _('Status') }}</h2>
+      <span class="badge {{ {'none':'badge-muted','requested':'badge-info','granted':'badge-ok','declined':'badge-warn'}[u.job_access] }}">
+        {{ {'none': _('Not requested'), 'requested': _('Under review'), 'granted': _('Access granted'), 'declined': _('Not approved')}[u.job_access] }}</span></div>
+    <div class="panel-body stack" style="gap:14px">
+      {% if u.job_access == 'granted' %}
+        <div class="callout ok">{{ icon('check-circle') }}<p>{{ _('You can browse jobs and apply.') }}</p></div>
+        <div class="actions"><a class="btn" href="{{ url_for('jobs') }}">{{ icon('search') }} {{ _('Browse jobs') }}</a><a class="btn btn-ghost" href="{{ url_for('my_applications') }}">{{ _('My applications') }}</a></div>
+      {% elif u.job_access == 'requested' %}
+        <div class="callout">{{ icon('clock') }}<p>{{ _("Your request is with the SkillProof team. We'll notify you when it's reviewed.") }}</p></div>
+      {% else %}
+        {% if u.job_access == 'declined' and u.job_access_note %}<div class="callout warn">{{ icon('alert') }}<p>{{ u.job_access_note }}</p></div>{% endif %}
+        <form method="post" class="form">
+          {{ csrf() }}
+          <label class="field">{{ _('Anything the team should know?') }} <small class="hint">({{ _('optional') }})</small>
+            <textarea name="note" rows="3" maxlength="500" placeholder="{{ _('e.g. the kind of work you are looking for, availability') }}"></textarea></label>
+          <div><button class="btn" {{ 'disabled' if not ready }}>{{ icon('arrow-right', 'flip-rtl') }} {{ _('Request job access') }}</button></div>
+        </form>
+      {% endif %}
+    </div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>{{ icon('check-circle') }} {{ _('Requirements') }}</h2></div>
+    <ul class="steps-list todo" style="padding:12px">
+      {% for label, ok in checks %}<li class="{{ 'done' if ok }}"><span><i class="tick">{% if ok %}{{ icon('check') }}{% endif %}</i>{{ label }}</span></li>{% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}
