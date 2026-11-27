@@ -34,7 +34,7 @@ def translate_texts(texts, lang):
     keys = [_key(t) for t in texts]
     cached = {c.source_hash: c.text for c in
               ContentTranslation.query.filter(ContentTranslation.lang == lang, ContentTranslation.source_hash.in_(keys))}
-    todo = [t for t, k in zip(texts, keys, strict=False) if k not in cached]
+    todo = [t for t, k in zip(texts, keys, strict=True) if k not in cached]
     if todo:
         system = (f"Translate each text into {english} ({native}) for a reader on SkillProof, a skills platform for "
                   "refugees and displaced professionals. Keep meaning, tone and line breaks; use plain, simple words. "
@@ -45,7 +45,7 @@ def translate_texts(texts, lang):
         result = ai._parse(system, content, Translated, max_tokens=16000)
         if len(result.translations) != len(todo):
             raise ai.AIUnavailable("translation count mismatch")
-        for src, out in zip(todo, result.translations, strict=False):
+        for src, out in zip(todo, result.translations, strict=True):
             k = _key(src)
             if k not in cached:
                 db.session.add(ContentTranslation(source_hash=k, lang=lang, text=out.strip() or src))
