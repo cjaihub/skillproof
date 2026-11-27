@@ -101,8 +101,8 @@ erDiagram
 ```mermaid
 stateDiagram-v2
     [*] --> self_declared
-    self_declared --> pending: test submitted + task answered + "Submit for assessment"
-    pending --> verified: assessment ≥ 12/20, no criterion < 2
+    self_declared --> pending: test and task done, then submitted
+    pending --> verified: 12/20 or more, no criterion below 2
     pending --> not_verified: assessment below the bar
     not_verified --> pending: appeal upheld (new assessor)
     not_verified --> pending: candidate improves and resubmits

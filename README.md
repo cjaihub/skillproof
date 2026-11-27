@@ -6,7 +6,8 @@
 
 Record skills · back them with evidence · get them independently assessed · share a verified report · get hired
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+[![CI](https://github.com/cjaihub/skillproof/actions/workflows/ci.yml/badge.svg)](https://github.com/cjaihub/skillproof/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.1-000000?logo=flask)
 ![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-dev-003B57?logo=sqlite)
@@ -14,8 +15,15 @@ Record skills · back them with evidence · get them independently assessed · s
 ![Languages](https://img.shields.io/badge/languages-13-0b6e4f)
 ![Tests](https://img.shields.io/badge/checks-248%20passing-2ea44f)
 ![No JS framework](https://img.shields.io/badge/frontend-vanilla%20JS-F7DF1E?logo=javascript&logoColor=black)
+[![Ruff](https://img.shields.io/badge/lint-ruff-D7FF64?logo=ruff&logoColor=black)](https://github.com/astral-sh/ruff)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-0b6e4f)](CONTRIBUTING.md)
+[![Translators wanted](https://img.shields.io/badge/translators-wanted-E3B23C)](https://github.com/cjaihub/skillproof/issues/new?template=translation.yml)
 
-[Quick start](#-quick-start) · [Features](#-features) · [Architecture](#-architecture) · [Documentation](#-documentation) · [Demo](#-demo-accounts) · [Security](#-security--data-protection) · [Deploy](#-deployment)
+[Quick start](#-quick-start) · [Features](#-features) · [Screenshots](#-screenshots) · [Research](#-the-context-kakuma-kenya) · [Architecture](#-architecture) · [Docs](#-documentation) · [Demo](#-demo-accounts) · [FAQ](#-faq)
+
+<br>
+
+<img src="docs/screenshots/candidate-dashboard.png" alt="SkillProof candidate dashboard showing verified skills, profile strength and job access" width="900">
 
 </div>
 
@@ -33,18 +41,39 @@ Admins vet employers and assessors and approve job ads to block scams, and grant
 
 ```mermaid
 flowchart LR
-    A[Candidate<br/>registers] --> B[Profile, skills<br/>& evidence]
-    B -->|AI import<br/>optional| B
-    B --> C[Online skills test<br/>+ practical task]
-    C --> D[Assessor scores<br/>4 criteria]
-    D -->|≥ 12/20, none < 2| E[Verified skill]
-    D -->|not verified| F[Appeal → different<br/>assessor]
+    A["Candidate registers"] --> B["Profile, skills and evidence"]
+    B -. "optional AI import" .-> B
+    B --> C["Online skills test and practical task"]
+    C --> D["Assessor scores 4 criteria"]
+    D -- "12/20 or more, no criterion below 2" --> E["Verified skill"]
+    D -- "not verified" --> F["Appeal to a different assessor"]
     F --> D
-    E --> G[Competency report<br/>shared by consent]
-    E --> H[Admin grants<br/>job access]
-    H --> I[Matched jobs<br/>→ apply → hired]
+    E --> G["Competency report, shared by consent"]
+    E --> H["Admin grants job access"]
+    H --> I["Matched jobs, apply, hired"]
     G --> I
 ```
+
+---
+
+## 🌍 The context: Kakuma, Kenya
+
+SkillProof is designed for a first pilot in **Kakuma camp and Kalobeyei settlement** in Turkana County, Kenya.
+
+| | Figure | Source |
+|---|---|---|
+| 🌐 | **117.8 million** people forcibly displaced worldwide at the end of 2025 (about 1 in 70 people), including 41.6 million refugees | [UNHCR Global Trends 2025](https://www.unhcr.org/sites/default/files/2026-06/global-trends-report-2025.pdf) |
+| 🇰🇪 | **872,000** refugees and asylum seekers in Kenya (November 2025) | [UNHCR Kenya](https://www.unhcr.org/ke/sites/ke/files/2026-04/Kenya%20Statistics%20Package%20-%2030%20November%202025.pdf) |
+| 🏕️ | **312,000** refugees in Kakuma camp (229,004) and Kalobeyei (83,462), April 2026 | [UNHCR Kenya](https://data.unhcr.org/es/documents/download/122448) |
+| 📉 | **27%** unemployment in the camp, against 14% in Kakuma town (2018 baseline) | [IFC, *Kakuma as a Marketplace*](https://www.ifc.org/content/dam/ifc/doc/mgrt-pub/20180427-kakuma-as-a-marketplace-v1.pdf) |
+| 🏪 | **2,000+** businesses already trading inside the camp | [IFC](https://www.ifc.org/en/podcasts/creating-markets/2020/cmpodcast-s1e3) |
+
+**Why now:** Kenya's *Refugees Act 2021* recognises refugees' right to work, and the
+[Shirika Plan](https://law.strathmore.edu/wp-content/uploads/2025/06/Shirika-Plan-Summary.pdf) (launched March 2025)
+aims to turn camps into integrated settlements. But almost no refugees hold formal work permits
+([CGD](https://www.cgdev.org/node/3136378)), and implementation gaps remain
+([World Bank](https://www.worldbank.org/en/news/feature/2026/05/18/as-aid-shrinks-jobs-become-central-to-self-reliance-for-host-communities-and-refugees-in-kenya)).
+When the legal door opens, employers still need a way to **trust skills that have no paperwork**. That is the gap SkillProof fills.
 
 ---
 
@@ -71,9 +100,32 @@ flowchart LR
 
 ---
 
+## 📸 Screenshots
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/home.png" alt="Landing page"><br><sub><b>Landing page</b>: what SkillProof does, with a step-by-step wizard</sub></td>
+<td width="50%"><img src="docs/screenshots/competency-report.png" alt="Shared competency report"><br><sub><b>Competency report</b>: competence areas, scores per criterion, reference codes</sub></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/assessor-review.png" alt="Assessor review screen"><br><sub><b>Assessor workspace</b>: skills test, practical task, evidence and live scoring</sub></td>
+<td><img src="docs/screenshots/admin-dashboard-dark.png" alt="Admin dashboard in dark mode"><br><sub><b>Admin console</b> (dark theme): KPIs, growth chart, skills by status</sub></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/employer-talent.png" alt="Employer talent search"><br><sub><b>Talent search</b>: filter by verified skill, level and location</sub></td>
+<td><img src="docs/screenshots/jobs.png" alt="Job board"><br><sub><b>Jobs</b>: admin-approved ads sorted by skills match</sub></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/home-arabic.png" alt="Landing page in Arabic, right to left"><br><sub><b>العربية</b>: full right-to-left layout</sub></td>
+<td align="center"><img src="docs/screenshots/mobile-dashboard.png" alt="Candidate dashboard on a phone in Kiswahili" width="260"><br><sub><b>Phone, in Kiswahili</b>: built for low-end devices</sub></td>
+</tr>
+</table>
+
+---
+
 ## 🚀 Quick start
 
-**Requirements:** Python 3.10+ (tested on 3.14). MySQL 8 is optional; SQLite is used by default.
+**Requirements:** Python 3.11+ (CI runs 3.11, 3.12 and 3.13; developed on 3.14). MySQL 8 is optional; SQLite is used by default.
 
 ```bash
 git clone https://github.com/cjaihub/skillproof.git
@@ -108,26 +160,29 @@ Tables are created automatically on first run.
 
 ```mermaid
 flowchart TB
-    subgraph Browser
-        T[Jinja2 HTML<br/>+ CSS design system]
-        JS[Vanilla JS<br/>main · charts · assistant · translate]
+    subgraph Browser["Browser"]
+        T["Jinja2 HTML and CSS design system"]
+        JS["Vanilla JS: main, charts, assistant, translate"]
     end
     subgraph Flask["Flask app (app.py)"]
-        MW[before_request:<br/>session · CSRF · approval gate · i18n]
-        V[views/*<br/>public · auth · candidate · assessor<br/>employer · admin · jobs · smart<br/>assistant · translate]
-        C[core.py<br/>RBAC · audit · notify · email · tokens]
-        I[i18n.py<br/>13 languages · RTL]
-        AI[ai.py<br/>structured outputs · fallbacks]
+        MW["before_request: session, CSRF, approval gate, i18n"]
+        V["views: public, auth, candidate, assessor, employer, admin, jobs, smart, assistant, translate"]
+        C["core.py: RBAC, audit, notify, email, tokens"]
+        I["i18n.py: 13 languages, RTL"]
+        AI["ai.py: structured outputs, fallbacks"]
     end
-    DB[(MySQL / SQLite<br/>SQLAlchemy)]
-    FS[[uploads/<br/>private evidence]]
-    CL{{Claude API}}
+    DB[("MySQL or SQLite via SQLAlchemy")]
+    FS[["uploads: private evidence"]]
+    CL{{"Claude API"}}
 
-    T <--> MW --> V
-    JS -- fetch / SSE --> V
-    V --> C --> DB
+    T --> MW
+    MW --> V
+    JS -- "fetch and SSE" --> V
+    V --> C
+    C --> DB
     V --> I
-    V --> AI --> CL
+    V --> AI
+    AI --> CL
     V --> FS
 ```
 
@@ -226,6 +281,11 @@ python test_flow.py     # 248 end-to-end checks across every role
 ```bash
 python test_links.py    # crawls every page as every role; fails on broken links or 500s
 ```
+```bash
+ruff check .            # lint (settings in pyproject.toml)
+```
+
+[GitHub Actions](https://github.com/cjaihub/skillproof/actions) runs lint, both test suites and a translation coverage report on Python 3.11, 3.12 and 3.13 for every push and pull request. Dependabot keeps dependencies up to date.
 
 ---
 
@@ -262,6 +322,66 @@ schema.sql              MySQL database and user setup
 - [ ] SMS and WhatsApp notifications for users without regular email access
 - [ ] Partner integrations (UNHCR, training providers) for pre-verified credentials
 - [ ] Offline-first PWA for camps with patchy connectivity
+
+---
+
+## ❓ FAQ
+
+<details>
+<summary><b>Does SkillProof replace formal qualification recognition?</b></summary>
+
+No. It records what an independent assessor saw, against published criteria, and keeps that separate from what the
+candidate declared. It complements formal routes such as the UNESCO Qualifications Passport and national recognition
+bodies, and helps where those routes don't reach.
+</details>
+
+<details>
+<summary><b>Do I need an Anthropic API key to run it?</b></summary>
+
+No. Every AI feature has a fallback: a question bank for tests, a basic document reader, a guide-mode assistant, and the
+original text instead of a translation. Add a key to `.env` to turn AI on. See [docs/AI.md](docs/AI.md).
+</details>
+
+<details>
+<summary><b>Can an AI decide whether someone's skill is verified?</b></summary>
+
+Never. AI only suggests. A vetted human assessor sets every score and writes the feedback, and candidates can appeal to a
+different assessor.
+</details>
+
+<details>
+<summary><b>What do employers see?</b></summary>
+
+Only what the candidate has agreed to share: the competency report (verified skills, scores, work history, summary).
+Never evidence files, email, phone, or ID. Candidates can see who viewed their report and stop sharing at any time.
+</details>
+
+<details>
+<summary><b>Will it work on a cheap phone with a weak connection?</b></summary>
+
+That is the design target: pages are server-rendered, there is no JavaScript framework or build step, charts are hand-written
+SVG, and every screen is responsive down to small phones.
+</details>
+
+<details>
+<summary><b>How can I help?</b></summary>
+
+Native-speaker translation reviews are the most valuable contribution: [open a translation issue](https://github.com/cjaihub/skillproof/issues/new?template=translation.yml).
+Code contributions are welcome too: see [CONTRIBUTING.md](CONTRIBUTING.md).
+</details>
+
+---
+
+## 🤝 Community
+
+- [Contributing guide](CONTRIBUTING.md) · [Code of conduct](CODE_OF_CONDUCT.md) · [Security policy](docs/SECURITY.md)
+- Issue templates for [bugs](https://github.com/cjaihub/skillproof/issues/new?template=bug_report.yml), [features](https://github.com/cjaihub/skillproof/issues/new?template=feature_request.yml) and [translations](https://github.com/cjaihub/skillproof/issues/new?template=translation.yml)
+- [Changelog](CHANGELOG.md)
+
+## 🙏 Acknowledgements
+
+Research figures come from UNHCR, the IFC and World Bank, Strathmore University's summary of the Shirika Plan, and the
+Center for Global Development (linked [above](#-the-context-kakuma-kenya)). AI features use [Claude](https://www.anthropic.com/claude) by Anthropic.
 
 ---
 

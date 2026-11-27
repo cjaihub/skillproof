@@ -1,0 +1,30 @@
+name: Translation fix
+description: Correct or review a translation (native speakers very welcome)
+labels: [translation]
+body:
+  - type: dropdown
+    id: lang
+    attributes:
+      label: Language
+      options: [Kiswahili, Français, العربية, Soomaali, Kinyarwanda, Ikirundi, አማርኛ, ትግርኛ, Afaan Oromoo, Lingála, Dholuo, Gĩkũyũ, A new language]
+    validations:
+      required: true
+  - type: input
+    id: english
+    attributes:
+      label: English text
+      placeholder: Add evidence
+  - type: input
+    id: current
+    attributes:
+      label: Current translation
+  - type: input
+    id: better
+    attributes:
+      label: Better translation
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Where it appears, and why the change helps

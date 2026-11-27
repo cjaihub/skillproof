@@ -10,19 +10,19 @@ This keeps pages light on low-end Android phones and slow connections, which man
 sequenceDiagram
     participant B as Browser
     participant F as Flask (app.py)
-    participant V as View (views/*)
+    participant V as View (views)
     participant D as Database
     B->>F: GET/POST /path
-    F->>F: i18n: pick language (?lang → session → cookie → Accept-Language)
+    F->>F: pick language from URL, session, cookie or browser
     F->>D: load g.user from session uid
     F->>F: check session_version and status (signed out if changed or suspended)
-    F->>F: POST → check CSRF token (form field `csrf` or `X-CSRF-Token` header)
+    F->>F: on POST, check the CSRF token (form field or header)
     F->>F: approval gate: pending users may only reach PENDING_ALLOWED endpoints
     F->>V: dispatch
-    V->>V: @login_required(roles) → RBAC
+    V->>V: login_required checks the role
     V->>D: query / mutate, write AuditLog, Notification
     V-->>B: render template (or JSON / SSE / file)
-    F-->>B: security headers (CSP-style framing deny, nosniff, referrer policy)
+    F-->>B: add security headers (frame deny, nosniff, referrer policy)
 ```
 
 ## Modules

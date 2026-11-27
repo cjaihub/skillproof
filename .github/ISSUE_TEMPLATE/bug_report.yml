@@ -1,0 +1,47 @@
+name: Bug report
+description: Something in SkillProof doesn't work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! **Never include real personal data, passwords, API keys, or ID numbers.**
+        Security problems: please report them privately instead (see docs/SECURITY.md).
+  - type: dropdown
+    id: role
+    attributes:
+      label: Signed in as
+      options: [Not signed in, Candidate, Assessor, Employer, Admin]
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Page or URL path
+      placeholder: /skills/3/test
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to …
+        2. Click …
+        3. See …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened instead
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Language, theme, device and browser
+      placeholder: Arabic (RTL), dark theme, Android phone, Chrome 131
+  - type: textarea
+    id: logs
+    attributes:
+      label: Server log or screenshot
+      render: text
