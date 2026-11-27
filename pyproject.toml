@@ -1,0 +1,12 @@
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+extend-exclude = [".venv", "uploads"]
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "B", "UP", "SIM", "I"]
+ignore = [
+    "E501",  # long template strings and prompts read better unwrapped
+    "E402",  # tests set environment variables before importing the app
+    "SIM105", "SIM108",
+]

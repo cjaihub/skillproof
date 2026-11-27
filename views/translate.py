@@ -6,13 +6,13 @@ answers 503 and the page keeps the original text.
 """
 import hashlib
 import time
-from typing import List
 
 from flask import jsonify, request, session
 from pydantic import BaseModel
 
 import ai
-from i18n import LANGUAGES, gettext as _
+from i18n import LANGUAGES
+from i18n import gettext as _
 from models import ContentTranslation, db
 
 MAX_TEXTS = 40
@@ -21,7 +21,7 @@ RATE = (30, 600)  # 30 requests per 10 minutes per session
 
 
 class Translated(BaseModel):
-    translations: List[str]
+    translations: list[str]
 
 
 def _key(text):
@@ -34,7 +34,7 @@ def translate_texts(texts, lang):
     keys = [_key(t) for t in texts]
     cached = {c.source_hash: c.text for c in
               ContentTranslation.query.filter(ContentTranslation.lang == lang, ContentTranslation.source_hash.in_(keys))}
-    todo = [t for t, k in zip(texts, keys) if k not in cached]
+    todo = [t for t, k in zip(texts, keys, strict=False) if k not in cached]
     if todo:
         system = (f"Translate each text into {english} ({native}) for a reader on SkillProof, a skills platform for "
                   "refugees and displaced professionals. Keep meaning, tone and line breaks; use plain, simple words. "
@@ -45,7 +45,7 @@ def translate_texts(texts, lang):
         result = ai._parse(system, content, Translated, max_tokens=16000)
         if len(result.translations) != len(todo):
             raise ai.AIUnavailable("translation count mismatch")
-        for src, out in zip(todo, result.translations):
+        for src, out in zip(todo, result.translations, strict=False):
             k = _key(src)
             if k not in cached:
                 db.session.add(ContentTranslation(source_hash=k, lang=lang, text=out.strip() or src))

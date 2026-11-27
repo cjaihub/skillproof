@@ -11,9 +11,10 @@ import json
 import os
 import time
 
-from flask import Response, current_app, g, jsonify, request, session, stream_with_context, url_for
+from flask import Response, current_app, g, jsonify, request, session, stream_with_context
 
-from i18n import LANGUAGES, current, gettext as _
+from i18n import LANGUAGES, current
+from i18n import gettext as _
 
 MODEL = os.environ.get("SKILLPROOF_AI_MODEL", "claude-opus-5-5")
 AI_ENABLED = os.environ.get("SKILLPROOF_AI", "on") != "off"
@@ -193,8 +194,7 @@ def _stream_claude(messages, context, refusal_text):
         ],
         messages=messages,
     ) as stream:
-        for text in stream.text_stream:
-            yield text
+        yield from stream.text_stream
         final = stream.get_final_message()
         if final.stop_reason == "refusal":
             yield "\n\n" + refusal_text

@@ -34,6 +34,7 @@
     {% endfor %}
   {% endwith %}
 </div>
+{% if TR_AVAILABLE %}
 <div class="tr-bar" id="tr-bar" hidden role="region" aria-label="{{ _('Translation') }}"
      data-endpoint="{{ url_for('translate_content') }}" data-csrf="{{ csrf_token }}" data-lang="{{ LANG }}"
      data-i18n='{{ {"to": _("Translate to {language}", language=LANGUAGES[LANG][0]), "orig": _("Show original"), "busy": _("Translating…"), "done": _("Translated by AI"), "note": _("Some text on this page was written by people using SkillProof.")}|tojson }}'>
@@ -41,6 +42,7 @@
   <button type="button" class="btn btn-sm" data-tr-go></button>
   <button type="button" class="icon-btn" data-tr-close aria-label="{{ _('Close') }}">{{ icon('x') }}</button>
 </div>
+{% endif %}
 {% if request.endpoint not in ('public_profile',) %}{% include "_assistant.html" %}{% endif %}
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>

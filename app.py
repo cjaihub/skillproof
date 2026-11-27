@@ -10,10 +10,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask, abort, flash, g, redirect, render_template, request, session, url_for
 
+import ai
 import core
 import i18n
-from models import (ACCOUNT_STATUSES, CRITERIA, EVIDENCE_KINDS, LEVELS, PASS_MARK, SKILL_STATUSES,
-                    Job, User, db, utcnow)
+from models import ACCOUNT_STATUSES, CRITERIA, EVIDENCE_KINDS, LEVELS, PASS_MARK, SKILL_STATUSES, Job, User, db, utcnow
 
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent
@@ -102,6 +102,7 @@ def register_hooks(app):
                     EVIDENCE_KINDS=EVIDENCE_KINDS, PASS_MARK=PASS_MARK, CATEGORIES=core.CATEGORIES,
                     ACCOUNT_STATUSES=ACCOUNT_STATUSES, setting=core.get_setting,
                     unread=u.unread_count if u else 0,
+                    TR_AVAILABLE=ai.configured(),
                     side_counts=({"pending": User.query.filter_by(status="pending").count()
                                              + User.query.filter_by(job_access="requested").count(),
                                   "jobs": Job.query.filter_by(status="pending").count()}

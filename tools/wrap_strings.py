@@ -72,7 +72,7 @@ def process(src):
         # 1. shield Jinja so '<' / '>' inside expressions can't confuse the HTML split
         tags = []
 
-        def shield(m):
+        def shield(m, tags=tags):
             tags.append(wrap_macro_call(m.group(0)))
             return f"\x00{len(tags) - 1}\x00"
         body = JINJA.sub(shield, chunk)
@@ -87,7 +87,7 @@ def process(src):
                                                  if translatable(a.group(2).strip()) else a.group(0)), p)
         body = "".join(pieces)
         # 3. restore Jinja
-        out.append(re.sub(r"\x00(\d+)\x00", lambda m: tags[int(m.group(1))], body))
+        out.append(re.sub(r"\x00(\d+)\x00", lambda m, tags=tags: tags[int(m.group(1))], body))
     return "".join(out)
 
 

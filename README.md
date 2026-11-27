@@ -12,7 +12,7 @@ Record skills · back them with evidence · get them independently assessed · s
 ![SQLite](https://img.shields.io/badge/SQLite-dev-003B57?logo=sqlite)
 ![Claude](https://img.shields.io/badge/AI-Claude-D97757)
 ![Languages](https://img.shields.io/badge/languages-13-0b6e4f)
-![Tests](https://img.shields.io/badge/checks-246%20passing-2ea44f)
+![Tests](https://img.shields.io/badge/checks-248%20passing-2ea44f)
 ![No JS framework](https://img.shields.io/badge/frontend-vanilla%20JS-F7DF1E?logo=javascript&logoColor=black)
 
 [Quick start](#-quick-start) · [Features](#-features) · [Architecture](#-architecture) · [Documentation](#-documentation) · [Demo](#-demo-accounts) · [Security](#-security--data-protection) · [Deploy](#-deployment)
@@ -221,7 +221,7 @@ Netlify only serves static files, so it can't run Flask. See [docs/DEPLOYMENT.md
 ## 🧪 Tests
 
 ```bash
-python test_flow.py     # 246 end-to-end checks across every role
+python test_flow.py     # 248 end-to-end checks across every role
 ```
 ```bash
 python test_links.py    # crawls every page as every role; fails on broken links or 500s

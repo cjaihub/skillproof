@@ -3,8 +3,18 @@ from datetime import timedelta
 
 from flask import flash, g, redirect, render_template, request, session, url_for
 
-from core import (LOCKOUT_MINUTES, MAX_FAILED_LOGINS, log, notify, password_problems, read_token,
-                  safe_next, send_reset, send_verification, setting_on)
+from core import (
+    LOCKOUT_MINUTES,
+    MAX_FAILED_LOGINS,
+    log,
+    notify,
+    password_problems,
+    read_token,
+    safe_next,
+    send_reset,
+    send_verification,
+    setting_on,
+)
 from i18n import gettext as _
 from models import User, db, utcnow
 

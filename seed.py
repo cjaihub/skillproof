@@ -10,8 +10,22 @@ import sys
 from datetime import timedelta
 
 from app import app
-from models import (Appeal, Application, Assessment, AuditLog, Evidence, Experience, Job, Notification, Shortlist, Skill, SkillTest, User,
-                    db, utcnow)
+from models import (
+    Appeal,
+    Application,
+    Assessment,
+    AuditLog,
+    Evidence,
+    Experience,
+    Job,
+    Notification,
+    Shortlist,
+    Skill,
+    SkillTest,
+    User,
+    db,
+    utcnow,
+)
 
 DEMO_PASSWORD = "SkillProof-demo-2026"
 
@@ -160,6 +174,7 @@ def run(reset=False):
 
         # --- Skills tests for the skills waiting in the queue (bank questions, all answered)
         import json as _json
+
         from ai import QUESTION_BANK, SHORT_QUESTIONS
         for s, right, answers in [(net, 4, ["When ping to the gateway works but names fail, I check DNS settings with nslookup "
                                                 "and compare with a working machine.", "I explain that DHCP is like a receptionist "
@@ -242,7 +257,7 @@ def run(reset=False):
             db.session.add(Notification(user_id=u.id, message=msg, kind=kind, link=link, created_at=now - timedelta(days=d)))
         db.session.commit()
         print("Demo data loaded. All demo accounts use the password in seed.py (DEMO_PASSWORD).")
-        for email, name, role, *_rest in DEMO_USERS:
+        for email, _name, role, *_rest in DEMO_USERS:
             print(f"  {role:<10} {_rest[3]:<8} {email}")
 
 

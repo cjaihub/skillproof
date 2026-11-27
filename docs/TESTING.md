@@ -8,7 +8,7 @@ own data is never touched, and both run AI features in fallback mode, so they ne
 ```bash
 python test_flow.py
 ```
-This runs **246 checks** through the whole platform as each role:
+This runs **248 checks** through the whole platform as each role:
 
 - Registration wizard, password rules, email verification, lockout, reset
 - CSRF rejection, approval gate for pending employers and assessors, role-based access denials

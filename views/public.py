@@ -4,7 +4,6 @@ import secrets
 from pathlib import Path
 
 from flask import Response, current_app, flash, g, redirect, render_template, request, session, url_for
-
 from sqlalchemy import or_
 
 from core import log, login_required, password_problems, safe_next
@@ -132,8 +131,8 @@ def register(app):
                        for s in u.skills],
             "evidence": [dict(title=e.title, kind=e.kind, link=e.link, file=e.original_name,
                               uploaded_at=e.uploaded_at.isoformat()) for e in u.evidence],
-            "access_log": [dict(action=l.action, detail=l.detail, at=l.created_at.isoformat())
-                           for l in AuditLog.query.filter_by(subject_user_id=u.id)
+            "access_log": [dict(action=a.action, detail=a.detail, at=a.created_at.isoformat())
+                           for a in AuditLog.query.filter_by(subject_user_id=u.id)
                            .order_by(AuditLog.created_at.desc()).all()],
         }
         log("data_exported", u.id)

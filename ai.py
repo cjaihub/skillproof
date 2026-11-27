@@ -11,7 +11,7 @@ import random
 import re
 import zipfile
 from pathlib import Path
-from typing import List, Literal, Optional
+from typing import Literal
 
 from flask import current_app
 from pydantic import BaseModel
@@ -31,6 +31,11 @@ def enabled():
     return os.environ.get("SKILLPROOF_AI", "on") != "off"
 
 
+def configured():
+    """True when AI is switched on and credentials are present, so on-demand features can be offered."""
+    return enabled() and bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"))
+
+
 # ---------------------------------------------------------------- output schemas
 
 Category = Literal["Software development", "IT support & networking", "Healthcare", "Teaching & training",
@@ -41,8 +46,8 @@ class ExperienceSuggestion(BaseModel):
     title: str
     organisation: str
     country: str
-    start_year: Optional[int]
-    end_year: Optional[int]
+    start_year: int | None
+    end_year: int | None
     description: str
 
 
@@ -64,13 +69,13 @@ class Correction(BaseModel):
 class ProfileExtraction(BaseModel):
     document_type: Literal["cv", "certificate", "reference_letter", "work_sample", "id_document", "other"]
     summary: str
-    headline: Optional[str]
-    location: Optional[str]
-    bio: Optional[str]
-    experiences: List[ExperienceSuggestion]
-    skills: List[SkillSuggestion]
-    corrections: List[Correction]
-    warnings: List[str]
+    headline: str | None
+    location: str | None
+    bio: str | None
+    experiences: list[ExperienceSuggestion]
+    skills: list[SkillSuggestion]
+    corrections: list[Correction]
+    warnings: list[str]
 
 
 class CriterionSuggestion(BaseModel):
@@ -81,23 +86,23 @@ class CriterionSuggestion(BaseModel):
 
 class EvidenceReview(BaseModel):
     overall_summary: str
-    criteria: List[CriterionSuggestion]
-    strengths: List[str]
-    concerns: List[str]
-    authenticity_flags: List[str]
-    questions_for_candidate: List[str]
+    criteria: list[CriterionSuggestion]
+    strengths: list[str]
+    concerns: list[str]
+    authenticity_flags: list[str]
+    questions_for_candidate: list[str]
 
 
 class MCQ(BaseModel):
     question: str
-    options: List[str]
+    options: list[str]
     correct_index: int
     explanation: str
 
 
 class GeneratedTest(BaseModel):
-    questions: List[MCQ]
-    short_questions: List[str]
+    questions: list[MCQ]
+    short_questions: list[str]
 
 
 # ---------------------------------------------------------------- Claude call

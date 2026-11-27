@@ -5,4 +5,5 @@ PyMySQL==1.2.4
 python-dotenv==1.2.4
 gunicorn==23.0.0
 anthropic>=2.14
+pydantic>=2.7          # structured AI outputs (imported directly)
 pypdf>=5

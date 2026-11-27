@@ -101,8 +101,15 @@ def coverage(code):
 
 def dynamic_strings():
     """Labels that are translated at runtime from code (statuses, levels, onboarding steps, password rules)."""
-    from models import (ACCOUNT_STATUSES, APPLICATION_STATUSES, EVIDENCE_KINDS, JOB_STATUSES, JOB_TYPES, LEVELS,
-                        SKILL_STATUSES)
+    from models import (
+        ACCOUNT_STATUSES,
+        APPLICATION_STATUSES,
+        EVIDENCE_KINDS,
+        JOB_STATUSES,
+        JOB_TYPES,
+        LEVELS,
+        SKILL_STATUSES,
+    )
     out = set()
     for d in (ACCOUNT_STATUSES, APPLICATION_STATUSES, EVIDENCE_KINDS, JOB_STATUSES, JOB_TYPES, LEVELS, SKILL_STATUSES):
         out |= set(d.values())
@@ -133,7 +140,6 @@ def ai_translate(code, batch=70):
     stop and re-run: it only translates what is still missing.
     """
     import os
-    from typing import List
 
     import anthropic
     from pydantic import BaseModel
@@ -143,7 +149,7 @@ def ai_translate(code, batch=70):
         translation: str
 
     class Batch(BaseModel):
-        items: List[Pair]
+        items: list[Pair]
 
     native, english, direction = LANGUAGES[code]
     path = BASE / "translations" / f"{code}.json"

@@ -5,11 +5,20 @@ from pathlib import Path
 
 from flask import abort, current_app, flash, g, redirect, render_template, request, send_from_directory, url_for
 
-from core import (ALLOWED_EXT, CATEGORIES, can_view_evidence, daily_counts, email_verified_required, log,
-                  login_required, notify, task_for, to_int)
+from core import (
+    ALLOWED_EXT,
+    CATEGORIES,
+    can_view_evidence,
+    daily_counts,
+    email_verified_required,
+    log,
+    login_required,
+    notify,
+    task_for,
+    to_int,
+)
 from i18n import gettext as _
-from models import (EVIDENCE_KINDS, Appeal, Assessment, AuditLog, Evidence, Experience, Skill, User, db,
-                    utcnow)
+from models import EVIDENCE_KINDS, Appeal, Assessment, AuditLog, Evidence, Experience, Skill, User, db, utcnow
 
 VIEW_ACTIONS = ("profile_view_employer", "profile_view_link")
 

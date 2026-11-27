@@ -1,10 +1,10 @@
 """Assessor workspace: dashboard, queue, scoring."""
 import json
 
-import ai
 from flask import abort, flash, g, redirect, render_template, request, url_for
 from sqlalchemy import func
 
+import ai
 from core import daily_counts, get_setting, log, login_required, notify, task_for, to_int
 from models import CRITERIA, PASS_MARK, AiReview, Assessment, Skill, db, utcnow
 

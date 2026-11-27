@@ -11,8 +11,8 @@ os.environ["DATABASE_URL"] = f"sqlite:///{tmp}/links.db"
 os.environ["UPLOAD_FOLDER"] = f"{tmp}/uploads"
 os.environ["SKILLPROOF_AI"] = "off"
 
-from app import app  # noqa: E402
 import seed  # noqa: E402
+from app import app  # noqa: E402
 
 seed.run(reset=True)
 SKIP = ("/logout", "/account/export", "/admin/users.csv", "/static/", "/evidence/")  # side effects or downloads

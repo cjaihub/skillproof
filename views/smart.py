@@ -8,8 +8,9 @@ from flask import abort, current_app, flash, g, redirect, render_template, reque
 
 import ai
 from core import CATEGORIES, email_verified_required, log, login_required, notify, to_int
-from i18n import LANGUAGES, current, gettext as _
-from models import (AiReview, DocImport, Evidence, Experience, Skill, SkillTest, User, db, utcnow)
+from i18n import LANGUAGES, current
+from i18n import gettext as _
+from models import AiReview, DocImport, Evidence, Experience, Skill, SkillTest, User, db, utcnow
 
 IMPORT_EXT = {"pdf", "png", "jpg", "jpeg", "webp", "docx", "txt"}
 RETAKE_AFTER = timedelta(hours=1)
